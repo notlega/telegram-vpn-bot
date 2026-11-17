@@ -4,14 +4,19 @@
  *
  * Usage: bun scripts/secrets.ts
  *
- * Requires the wrangler CLI on PATH (bun i -g wrangler or npm i -g wrangler).
+ * Uses the project-local wrangler from node_modules (installed by `bun install`),
+ * falling back to a global wrangler when present.
  */
 
 const SECRETS = ["BOT_TOKEN", "VULTR_API_TOKEN", "ALLOWED_USER_ID", "WEBHOOK_SECRET"] as const;
 
-const wrangler = Bun.which("wrangler");
+const localWrangler = new URL("../node_modules/.bin/wrangler", import.meta.url).pathname;
+const wrangler = (await Bun.file(localWrangler).exists())
+  ? localWrangler
+  : (Bun.which("wrangler") ?? null);
+
 if (!wrangler) {
-  console.error("wrangler not found on PATH. Install it globally: bun i -g wrangler");
+  console.error("wrangler not found. Run `bun install`, then `bunx wrangler login`.");
   process.exit(1);
 }
 
