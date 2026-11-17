@@ -29,10 +29,9 @@ is a bearer credential, so treat it as a secret.
 ## Quick start
 
 ```sh
-bun i -g wrangler                              # global CLI, required
-bun install
-wrangler login
-wrangler kv namespace create KV                # paste id into wrangler.toml
+bun install                                    # installs project-local wrangler
+bunx wrangler login
+bunx wrangler kv namespace create KV           # paste id into wrangler.toml
 cp .env.example .env                           # fill in 4 values
 bun run secrets                                # push them to Cloudflare
 bun run deploy

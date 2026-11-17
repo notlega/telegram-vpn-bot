@@ -16,22 +16,21 @@ chat.
 
 ## 2. Local tooling
 
-Install Bun and a **global** wrangler first. The repository does not vendor
-wrangler, so developers keep one CLI version for all checkouts.
+Install [Bun](https://bun.sh), then let the project's devDependency supply
+wrangler. Pinning it per checkout is what Cloudflare recommends.
 
 ```sh
 git clone git@github.com:notlega/telegram-vpn-bot.git
 cd telegram-vpn-bot
-bun i -g wrangler             # or: npm i -g wrangler
-wrangler --version            # must resolve on PATH
-wrangler login
 bun install
+bunx wrangler --version       # 4.x from node_modules
+bunx wrangler login
 ```
 
 ## 3. Create the KV namespace
 
 ```sh
-wrangler kv namespace create KV
+bunx wrangler kv namespace create KV
 ```
 
 Copy the printed `id` into `wrangler.toml`:
@@ -68,6 +67,9 @@ bun run secrets
 
 The helper pipes each `.env` value into `wrangler secret put` and reports which
 names were skipped. `.env` is git-ignored; never commit it.
+
+In CI or any non-interactive shell, export `CLOUDFLARE_API_TOKEN` instead of
+relying on `wrangler login`; both `bun run secrets` and `bun run deploy` use it.
 
 ## 5. Configuration
 
@@ -131,8 +133,8 @@ Secret rotation: edit `.env`, then `bun run secrets` again. Re-run
 ```sh
 bun run set-webhook -- --delete   # or:
 curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"
-wrangler delete
-wrangler kv namespace delete --namespace-id <id>
+bunx wrangler delete
+bunx wrangler kv namespace delete --namespace-id <id>
 ```
 
 Destroy all Vultr instances first with `/down`; deleting the worker leaves any

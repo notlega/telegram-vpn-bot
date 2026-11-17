@@ -58,20 +58,19 @@ Extended docs live in [`docs/`](docs/home.md) and mirror the
 
 ### 2. Local tooling
 
-Requires [Bun](https://bun.sh) and a **global** wrangler install. The repository
-does not vendor wrangler, so one version serves every checkout.
+Requires [Bun](https://bun.sh). Wrangler is a project devDependency, so
+`bun install` pins the CLI to this checkout.
 
 ```sh
 bun --version                 # 1.2+
-bun i -g wrangler             # or: npm i -g wrangler
-wrangler login
 bun install
+bunx wrangler login
 ```
 
 ### 3. Create the KV namespace
 
 ```sh
-wrangler kv namespace create KV
+bunx wrangler kv namespace create KV
 ```
 
 Copy the printed `id` into `wrangler.toml` (`REPLACE_WITH_KV_NAMESPACE_ID`).
@@ -142,8 +141,8 @@ curl http://127.0.0.1:8787/
 Local callback test:
 
 ```sh
-wrangler kv key put --binding KV --local "secret:testtoken" "<instance-id>"
-wrangler kv key put --binding KV --local "inst:<instance-id>" '<record-json>'
+bunx wrangler kv key put --binding KV --local "secret:testtoken" "<instance-id>"
+bunx wrangler kv key put --binding KV --local "inst:<instance-id>" '<record-json>'
 curl "http://127.0.0.1:8787/ready?token=testtoken&ip=203.0.113.10"
 ```
 

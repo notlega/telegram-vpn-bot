@@ -53,7 +53,7 @@ promptly, and use `/status` as the inventory.
 | No link after 3 min              | `/status` state                                               | Wait for the 8-minute cron fallback                              |
 | Failed after 15 min              | Vultr console → instance → `/var/log/vpn-setup.log`           | Look for `apt-get` or `curl` failures (transient mirror/network) |
 | Link imported, no traffic        | Client log, then `curl -x http://127.0.0.1:10808 ifconfig.me` | If empty, likely blocked IP → `/up` new server                   |
-| Bot silent                       | `wrangler tail`                                               | Webhook secret mismatch → re-run `bun run set-webhook`           |
+| Bot silent                       | `bunx wrangler tail`                                          | Webhook secret mismatch → re-run `bun run set-webhook`           |
 | Webhook 403                      | `WEBHOOK_SECRET` vs Telegram registration                     | Re-register with the same secret                                 |
 | Slow throughput                  | `mtr -T -P 443 -n -r -c 5 <server ip>`                        | Vultr routes are congestion-prone; try another region            |
 
