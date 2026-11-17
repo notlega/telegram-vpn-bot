@@ -2,12 +2,12 @@
 
 ## Daily use
 
-| Task | Do this |
-|---|---|
-| New server | `/up` → region |
-| Check fleet | `/status` |
+| Task            | Do this                  |
+| --------------- | ------------------------ |
+| New server      | `/up` → region           |
+| Check fleet     | `/status`                |
 | Remove a server | `/down` → pick → confirm |
-| See your TG id | `/id` |
+| See your TG id  | `/id`                    |
 
 Provisioning takes roughly 2 minutes: instance boot (~30 s), `apt-get` + Xray
 download (~60 s), callback. The bot edits its status message when done.
@@ -35,27 +35,27 @@ client profiles are per-link, so add the new one and delete the old one.
 
 ## Cost
 
-| Item | Cost |
-|---|---|
-| Cloudflare Workers + KV + cron | $0 (free tier) |
+| Item                             | Cost                          |
+| -------------------------------- | ----------------------------- |
+| Cloudflare Workers + KV + cron   | $0 (free tier)                |
 | Vultr `vc2-1c-1g` (1 vCPU, 1 GB) | ≈ $6/month per running server |
-| Destroyed instances | $0 |
+| Destroyed instances              | $0                            |
 
 The bot itself is free; only live instances bill. Destroy old instances
 promptly, and use `/status` as the inventory.
 
 ## Troubleshooting
 
-| Symptom | Check | Fix |
-|---|---|---|
-| `/up` replies with a Vultr error | Vultr console → Account → API | Token needs Instances + IPv4 read/write |
-| "plan not found" | `PLAN` in `wrangler.toml` | Pick a plan id available in that region |
-| No link after 3 min | `/status` state | Wait for the 8-minute cron fallback |
-| Failed after 15 min | Vultr console → instance → `/var/log/vpn-setup.log` | Look for `apt-get` or `curl` failures (transient mirror/network) |
-| Link imported, no traffic | Client log, then `curl -x http://127.0.0.1:10808 ifconfig.me` | If empty, likely blocked IP → `/up` new server |
-| Bot silent | `npx wrangler tail` | Webhook secret mismatch → re-run `scripts/set-webhook.mjs` |
-| Webhook 403 | `WEBHOOK_SECRET` vs Telegram registration | Re-register with the same secret |
-| Slow throughput | `mtr -T -P 443 -n -r -c 5 <server ip>` | Vultr routes are congestion-prone; try another region |
+| Symptom                          | Check                                                         | Fix                                                              |
+| -------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `/up` replies with a Vultr error | Vultr console → Account → API                                 | Token needs Instances + IPv4 read/write                          |
+| "plan not found"                 | `PLAN` in `wrangler.toml`                                     | Pick a plan id available in that region                          |
+| No link after 3 min              | `/status` state                                               | Wait for the 8-minute cron fallback                              |
+| Failed after 15 min              | Vultr console → instance → `/var/log/vpn-setup.log`           | Look for `apt-get` or `curl` failures (transient mirror/network) |
+| Link imported, no traffic        | Client log, then `curl -x http://127.0.0.1:10808 ifconfig.me` | If empty, likely blocked IP → `/up` new server                   |
+| Bot silent                       | `wrangler tail`                                               | Webhook secret mismatch → re-run `bun run set-webhook`           |
+| Webhook 403                      | `WEBHOOK_SECRET` vs Telegram registration                     | Re-register with the same secret                                 |
+| Slow throughput                  | `mtr -T -P 443 -n -r -c 5 <server ip>`                        | Vultr routes are congestion-prone; try another region            |
 
 ## Inspecting a provisioned server
 

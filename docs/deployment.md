@@ -4,35 +4,40 @@ Zero → live in about ten minutes.
 
 ## 1. Prerequisites
 
-| Item | Where |
-|---|---|
-| Cloudflare account (free plan) | dash.cloudflare.com |
-| Vultr account + API token | Vultr → Account → API (enable IPv4 + Instances read/write) |
-| Telegram bot token | [@BotFather](https://t.me/BotFather) → `/newbot` |
-| Telegram user id | [@userinfobot](https://t.me/userinfobot) |
+| Item                           | Where                                                      |
+| ------------------------------ | ---------------------------------------------------------- |
+| Cloudflare account (free plan) | dash.cloudflare.com                                        |
+| Vultr account + API token      | Vultr → Account → API (enable IPv4 + Instances read/write) |
+| Telegram bot token             | [@BotFather](https://t.me/BotFather) → `/newbot`           |
+| Telegram user id               | [@userinfobot](https://t.me/userinfobot)                   |
 
 The API token is only used server-side, inside the worker. Do not paste it into
 chat.
 
 ## 2. Local tooling
 
+Install Bun and a **global** wrangler first. The repository does not vendor
+wrangler, so developers keep one CLI version for all checkouts.
+
 ```sh
 git clone git@github.com:notlega/telegram-vpn-bot.git
 cd telegram-vpn-bot
-npm install
-npx wrangler login
+bun i -g wrangler             # or: npm i -g wrangler
+wrangler --version            # must resolve on PATH
+wrangler login
+bun install
 ```
 
 ## 3. Create the KV namespace
 
 ```sh
-npx wrangler kv namespace create KV
+wrangler kv namespace create KV
 ```
 
 Copy the printed `id` into `wrangler.toml`:
 
 ```toml
-[kv_namespaces](kv_namespaces)
+[[kv_namespaces]]
 binding = "KV"
 id = "<paste-here>"
 ```
@@ -40,7 +45,7 @@ id = "<paste-here>"
 ## 4. Secrets
 
 ```sh
-cp .dev.vars.example .dev.vars
+cp .env.example .env
 ```
 
 Fill in:
@@ -55,29 +60,27 @@ WEBHOOK_SECRET=any-long-random-string
 `ALLOWED_USER_ID` accepts a comma-separated list. `WEBHOOK_SECRET` can be
 generated with `openssl rand -hex 32`.
 
-Push the same values to the worker:
+Push every value to the worker in one step:
 
 ```sh
-npx wrangler secret put BOT_TOKEN
-npx wrangler secret put VULTR_API_TOKEN
-npx wrangler secret put ALLOWED_USER_ID
-npx wrangler secret put WEBHOOK_SECRET
+bun run secrets
 ```
 
-`.dev.vars` is git-ignored; never commit it.
+The helper pipes each `.env` value into `wrangler secret put` and reports which
+names were skipped. `.env` is git-ignored; never commit it.
 
 ## 5. Configuration
 
 `wrangler.toml` `[vars]`:
 
-| Var | Default | Meaning |
-|---|---|---|
-| `REGIONS` | `icn:Seoul,nrt:Tokyo,sgp:Singapore` | region buttons in `/up` |
-| `PLAN` | `vc2-1c-1g` | Vultr plan id (≈$6/mo) |
-| `OS_NAME` | `Debian` | OS family prefix, resolved to the newest x64 image |
-| `SNI` | `www.yahoo.com` | REALITY camouflage destination |
+| Var       | Default                             | Meaning                                            |
+| --------- | ----------------------------------- | -------------------------------------------------- |
+| `REGIONS` | `icn:Seoul,nrt:Tokyo,sgp:Singapore` | region buttons in `/up`                            |
+| `PLAN`    | `vc2-1c-1g`                         | Vultr plan id (≈$6/mo)                             |
+| `OS_NAME` | `Debian`                            | OS family prefix, resolved to the newest x64 image |
+| `SNI`     | `www.yahoo.com`                     | REALITY camouflage destination                     |
 
-Change a value → `npx wrangler deploy` again.
+Change a value → `bun run deploy` again.
 
 > Debian (not Alpine) because the bootstrap depends on cloud-init user-data;
 > Vultr's Alpine images do not ship cloud-init.
@@ -85,7 +88,7 @@ Change a value → `npx wrangler deploy` again.
 ## 6. Deploy
 
 ```sh
-npx wrangler deploy
+bun run deploy
 ```
 
 Note the printed `https://telegram-vpn-bot.<subdomain>.workers.dev` URL.
@@ -93,7 +96,7 @@ Note the printed `https://telegram-vpn-bot.<subdomain>.workers.dev` URL.
 ## 7. Register the webhook
 
 ```sh
-node scripts/set-webhook.mjs https://telegram-vpn-bot.<subdomain>.workers.dev
+bun run set-webhook -- https://telegram-vpn-bot.<subdomain>.workers.dev
 ```
 
 Expected: `webhook set: ... (secret token enabled)`.
@@ -116,20 +119,20 @@ If step 4 fails, open the instance in the Vultr console and read
 
 ```sh
 git pull
-npm install
-npx wrangler deploy
+bun install
+bun run deploy
 ```
 
-Secret rotation: `wrangler secret put …` again, then re-run
-`scripts/set-webhook.mjs` only if `WEBHOOK_SECRET` changed.
+Secret rotation: edit `.env`, then `bun run secrets` again. Re-run
+`bun run set-webhook` only if `WEBHOOK_SECRET` changed.
 
 ## Removing the deployment
 
 ```sh
-node scripts/set-webhook.mjs --delete   # or:
+bun run set-webhook -- --delete   # or:
 curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"
-npx wrangler delete
-npx wrangler kv namespace delete --namespace-id <id>
+wrangler delete
+wrangler kv namespace delete --namespace-id <id>
 ```
 
 Destroy all Vultr instances first with `/down`; deleting the worker leaves any

@@ -15,11 +15,11 @@ cron (* * * * *) ──> reconcile provisioning records, publish links
 
 The worker has three HTTP routes:
 
-| Route | Purpose |
-|---|---|
+| Route            | Purpose                                                        |
+| ---------------- | -------------------------------------------------------------- |
 | `POST /telegram` | Telegram webhook, guarded by `X-Telegram-Bot-Api-Secret-Token` |
-| `GET /ready` | Cloud-init completion callback (`token` + `ip` query params) |
-| `GET /` | Health check string |
+| `GET /ready`     | Cloud-init completion callback (`token` + `ip` query params)   |
+| `GET /`          | Health check string                                            |
 
 Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
 
@@ -45,12 +45,12 @@ Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
 
 ### Reconciliation fallbacks
 
-| Situation | Behaviour |
-|---|---|
-| Callback arrives | immediate publish (normal path) |
-| Callback lost, instance running | cron publishes after **8 minutes** using the Vultr IP, with a warning note |
-| Instance vanished from Vultr | cron marks `failed` on the next tick |
-| No callback after **15 minutes** | cron marks `failed` |
+| Situation                        | Behaviour                                                                  |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| Callback arrives                 | immediate publish (normal path)                                            |
+| Callback lost, instance running  | cron publishes after **8 minutes** using the Vultr IP, with a warning note |
+| Instance vanished from Vultr     | cron marks `failed` on the next tick                                       |
+| No callback after **15 minutes** | cron marks `failed`                                                        |
 
 Cron only touches records in `provisioning`, so a quiet fleet costs nothing.
 
@@ -65,16 +65,16 @@ secret:<callback-token>   -> "<vultr-instance-id>"
 
 `InstanceRecord`:
 
-| Field | Meaning |
-|---|---|
-| `id` | Vultr instance id |
-| `region`, `regionLabel` | `icn` / Seoul etc. |
-| `ip` | reported by callback (or Vultr fallback) |
-| `state` | `provisioning` \| `ready` \| `failed` |
-| `chatId`, `messageId` | where the status message lives |
-| `secret` | one-time callback token |
-| `uuid`, `privateKey`, `publicKey`, `shortId`, `sni` | Xray credentials |
-| `createdAt`, `readyAt`, `error` | bookkeeping |
+| Field                                               | Meaning                                  |
+| --------------------------------------------------- | ---------------------------------------- |
+| `id`                                                | Vultr instance id                        |
+| `region`, `regionLabel`                             | `icn` / Seoul etc.                       |
+| `ip`                                                | reported by callback (or Vultr fallback) |
+| `state`                                             | `provisioning` \| `ready` \| `failed`    |
+| `chatId`, `messageId`                               | where the status message lives           |
+| `secret`                                            | one-time callback token                  |
+| `uuid`, `privateKey`, `publicKey`, `shortId`, `sni` | Xray credentials                         |
+| `createdAt`, `readyAt`, `error`                     | bookkeeping                              |
 
 The `secret` index exists so the callback can authenticate without exposing the
 instance id.
@@ -94,13 +94,13 @@ credentials behind.
 
 ## Server-side layout (provisioned box)
 
-| Path | Contents |
-|---|---|
-| `/usr/local/bin/xray` | Xray binary + geo assets |
-| `/usr/local/etc/xray/config.json` | REALITY inbound config |
+| Path                               | Contents                                            |
+| ---------------------------------- | --------------------------------------------------- |
+| `/usr/local/bin/xray`              | Xray binary + geo assets                            |
+| `/usr/local/etc/xray/config.json`  | REALITY inbound config                              |
 | `/etc/systemd/system/xray.service` | systemd unit (`XRAY_LOCATION_ASSET=/usr/local/bin`) |
-| `/etc/sysctl.d/99-bbr.conf` | BBR + fq |
-| `/var/log/vpn-setup.log` | bootstrap transcript |
+| `/etc/sysctl.d/99-bbr.conf`        | BBR + fq                                            |
+| `/var/log/vpn-setup.log`           | bootstrap transcript                                |
 
 No SSH key is installed and port 22 is not managed by the bot, so the instance
 is intentionally not remotely administrable by default.
@@ -117,10 +117,10 @@ is intentionally not remotely administrable by default.
 
 ## Failure modes
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Vultr 403 on `/up` | API token lacks permissions / account limit | Re-issue token with instance read+write |
-| 4xx "plan not available" | `PLAN` not offered in that region | Change `PLAN` in `wrangler.toml` |
-| No callback, failure after 15 min | Bootstrap script aborted | Vultr console → instance → view `/var/log/vpn-setup.log` |
-| Link answers but no traffic | REALITY SNI blocked or IP burned | `/up` a new region, destroy old |
-| `webhook` returns 403 | `WEBHOOK_SECRET` mismatch with `setWebhook` | Re-run `scripts/set-webhook.mjs` with the same secret |
+| Symptom                           | Likely cause                                | Fix                                                      |
+| --------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
+| Vultr 403 on `/up`                | API token lacks permissions / account limit | Re-issue token with instance read+write                  |
+| 4xx "plan not available"          | `PLAN` not offered in that region           | Change `PLAN` in `wrangler.toml`                         |
+| No callback, failure after 15 min | Bootstrap script aborted                    | Vultr console → instance → view `/var/log/vpn-setup.log` |
+| Link answers but no traffic       | REALITY SNI blocked or IP burned            | `/up` a new region, destroy old                          |
+| `webhook` returns 403             | `WEBHOOK_SECRET` mismatch with `setWebhook` | Re-run `scripts/set-webhook.mjs` with the same secret    |

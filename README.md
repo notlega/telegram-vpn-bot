@@ -40,12 +40,12 @@ Vultr IP and a warning. Provisioning records fail after 15 minutes.
 Extended docs live in [`docs/`](docs/home.md) and mirror the
 [GitHub wiki](https://github.com/notlega/telegram-vpn-bot/wiki):
 
-| Page | Contents |
-|---|---|
+| Page                                 | Contents                                                |
+| ------------------------------------ | ------------------------------------------------------- |
 | [Architecture](docs/architecture.md) | request flow, KV schema, reconciliation, security model |
-| [Deployment](docs/deployment.md) | zero → live runbook |
-| [Clients](docs/clients.md) | importing links into v2rayN / v2rayNG |
-| [Operations](docs/operations.md) | IP-burn lifecycle, cost, troubleshooting |
+| [Deployment](docs/deployment.md)     | zero → live runbook                                     |
+| [Clients](docs/clients.md)           | importing links into v2rayN / v2rayNG                   |
+| [Operations](docs/operations.md)     | IP-burn lifecycle, cost, troubleshooting                |
 
 ## Setup
 
@@ -58,15 +58,20 @@ Extended docs live in [`docs/`](docs/home.md) and mirror the
 
 ### 2. Local tooling
 
+Requires [Bun](https://bun.sh) and a **global** wrangler install. The repository
+does not vendor wrangler, so one version serves every checkout.
+
 ```sh
-npm install
-npx wrangler login
+bun --version                 # 1.2+
+bun i -g wrangler             # or: npm i -g wrangler
+wrangler login
+bun install
 ```
 
 ### 3. Create the KV namespace
 
 ```sh
-npx wrangler kv namespace create KV
+wrangler kv namespace create KV
 ```
 
 Copy the printed `id` into `wrangler.toml` (`REPLACE_WITH_KV_NAMESPACE_ID`).
@@ -74,21 +79,19 @@ Copy the printed `id` into `wrangler.toml` (`REPLACE_WITH_KV_NAMESPACE_ID`).
 ### 4. Secrets
 
 ```sh
-cp .dev.vars.example .dev.vars   # fill in BOT_TOKEN, VULTR_API_TOKEN, ALLOWED_USER_ID, WEBHOOK_SECRET
-npx wrangler secret put BOT_TOKEN
-npx wrangler secret put VULTR_API_TOKEN
-npx wrangler secret put ALLOWED_USER_ID
-npx wrangler secret put WEBHOOK_SECRET
+cp .env.example .env           # fill in BOT_TOKEN, VULTR_API_TOKEN, ALLOWED_USER_ID, WEBHOOK_SECRET
+bun run secrets                # pushes all four to Cloudflare via wrangler
 ```
 
-`WEBHOOK_SECRET` is any random string; the worker rejects webhook calls
-without it.
+Bun loads `.env` automatically, so the helper scripts need no extra setup.
+`WEBHOOK_SECRET` is any random string; the worker rejects webhook calls without
+it.
 
 ### 5. Deploy and register the webhook
 
 ```sh
-npx wrangler deploy
-node scripts/set-webhook.mjs https://telegram-vpn-bot.<subdomain>.workers.dev
+bun run deploy
+bun run set-webhook -- https://telegram-vpn-bot.<subdomain>.workers.dev
 ```
 
 ### 6. Use it
@@ -99,12 +102,12 @@ Open the bot, `/id` to double check the allowlist, then `/up`.
 
 `wrangler.toml`:
 
-| Var | Meaning |
-|---|---|
+| Var       | Meaning                                                                          |
+| --------- | -------------------------------------------------------------------------------- |
 | `REGIONS` | `id:label` pairs offered in the `/up` menu (`icn:Seoul,nrt:Tokyo,sgp:Singapore`) |
-| `PLAN` | Vultr plan id, default `vc2-1c-1g` (~$6/mo) |
-| `OS_NAME` | OS family prefix to resolve dynamically, default `Debian` |
-| `SNI` | REALITY camouflage destination, default `www.yahoo.com` |
+| `PLAN`    | Vultr plan id, default `vc2-1c-1g` (~$6/mo)                                      |
+| `OS_NAME` | OS family prefix to resolve dynamically, default `Debian`                        |
+| `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                          |
 
 `OS_NAME` defaults to Debian because the bootstrap script needs cloud-init for
 user-data; Vultr's Alpine images do not ship it.
@@ -129,15 +132,21 @@ user-data; Vultr's Alpine images do not ship it.
 ## Development
 
 ```sh
-npm run typecheck
-npx wrangler dev            # local worker, local KV
+bun run dev                 # wrangler dev, local worker + local KV
+bun run check               # typecheck + biome
+bun run lint                # biome check
+bun run format              # biome format --write
 curl http://127.0.0.1:8787/
 ```
 
 Local callback test:
 
 ```sh
-npx wrangler kv key put --binding KV --local "secret:testtoken" "<instance-id>"
-npx wrangler kv key put --binding KV --local "inst:<instance-id>" '<record-json>'
+wrangler kv key put --binding KV --local "secret:testtoken" "<instance-id>"
+wrangler kv key put --binding KV --local "inst:<instance-id>" '<record-json>'
 curl "http://127.0.0.1:8787/ready?token=testtoken&ip=203.0.113.10"
 ```
+
+`wrangler dev` loads `.env` automatically (add `--env-file path` for another
+file). A local `.dev.vars` file, if present, takes precedence over `.env` for
+local development only.
