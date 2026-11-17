@@ -6,17 +6,32 @@
  * between requests.
  */
 
+/** A REALITY key pair, both halves encoded the way Xray expects them. */
 export interface RealityKeyPair {
+  /** 32 raw bytes, base64url encoded. Written to the server config. */
   privateKey: string;
+  /** 32 raw bytes, base64url encoded. Published in the share link as `pbk`. */
   publicKey: string;
 }
 
+/**
+ * Encodes bytes as unpadded base64url, the format Xray uses for REALITY keys.
+ *
+ * @param bytes — raw key material.
+ * @returns base64url string without `=` padding.
+ */
 export function toBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+/**
+ * Decodes an unpadded base64url string produced by {@link toBase64Url}.
+ *
+ * @param value — base64url string, padding optional.
+ * @returns the decoded bytes.
+ */
 export function fromBase64Url(value: string): Uint8Array {
   const padded = value
     .replace(/-/g, "+")
@@ -28,6 +43,14 @@ export function fromBase64Url(value: string): Uint8Array {
   return bytes;
 }
 
+/**
+ * Generates a fresh X25519 key pair for one server.
+ *
+ * The private half is exported raw when the runtime allows it and falls back to
+ * the trailing 32 bytes of the PKCS#8 encoding otherwise.
+ *
+ * @returns the pair in Xray's base64url format.
+ */
 export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
   const keyPair = (await crypto.subtle.generateKey({ name: "X25519" }, true, [
     "deriveBits",
@@ -57,14 +80,32 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
   };
 }
 
+/**
+ * Generates a REALITY short id.
+ *
+ * @param byteLength — number of random bytes; Xray accepts up to 8 bytes
+ *   (16 hex characters). Defaults to 4.
+ * @returns lowercase hex string, `byteLength * 2` characters long.
+ */
 export function generateShortId(byteLength = 4): string {
   return randomHex(byteLength);
 }
 
+/**
+ * Generates a random UUID v4 for use as the VLESS user id.
+ *
+ * @returns canonical UUID string.
+ */
 export function generateUuid(): string {
   return crypto.randomUUID();
 }
 
+/**
+ * Generates cryptographically random bytes as lowercase hex.
+ *
+ * @param byteLength — number of random bytes.
+ * @returns hex string, `byteLength * 2` characters long.
+ */
 export function randomHex(byteLength: number): string {
   const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");

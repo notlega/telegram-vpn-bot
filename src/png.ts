@@ -6,8 +6,10 @@
  * PNG expects).
  */
 
+/** PNG magic bytes that open every file. */
 const SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+/** Precomputed CRC-32 lookup table used by the PNG chunk trailer. */
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let n = 0; n < 256; n += 1) {
@@ -18,12 +20,24 @@ const CRC_TABLE = (() => {
   return table;
 })();
 
+/**
+ * Computes the CRC-32 checksum PNG requires for every chunk.
+ *
+ * @param bytes — chunk type plus data.
+ * @returns unsigned 32-bit checksum.
+ */
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
   for (const byte of bytes) crc = (CRC_TABLE[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+/**
+ * Joins byte arrays into one contiguous buffer.
+ *
+ * @param parts — buffers in output order.
+ * @returns a new buffer containing all parts.
+ */
 function concat(parts: Uint8Array[]): Uint8Array {
   const total = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(total);
@@ -35,6 +49,13 @@ function concat(parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
+/**
+ * Wraps data in a PNG chunk: length, type, payload, CRC.
+ *
+ * @param type — four character chunk type such as `IHDR`.
+ * @param data — chunk payload.
+ * @returns the encoded chunk.
+ */
 function chunk(type: string, data: Uint8Array): Uint8Array {
   const out = new Uint8Array(12 + data.length);
   const view = new DataView(out.buffer);
@@ -45,11 +66,28 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   return out;
 }
 
+/**
+ * Compresses bytes with zlib-wrapped deflate, the encoding PNG's IDAT chunk
+ * expects.
+ *
+ * @param data — raw scanline buffer.
+ * @returns compressed bytes.
+ */
 async function deflate(data: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
+/**
+ * Encodes 8-bit grayscale pixels as a PNG file.
+ *
+ * @param pixels — row-major grayscale samples, one byte per pixel (0 black,
+ *   255 white). Length must equal `width * height`.
+ * @param width — image width in pixels.
+ * @param height — image height in pixels.
+ * @returns the complete PNG file as bytes.
+ * @throws {Error} when the pixel buffer length does not match the dimensions.
+ */
 export async function encodeGrayscalePng(
   pixels: Uint8Array,
   width: number,
