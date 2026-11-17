@@ -42,13 +42,13 @@ node scripts/set-webhook.mjs https://telegram-vpn-bot.<subdomain>.workers.dev
 
 Then open the bot and send `/up`.
 
-Full walkthrough: [Deployment](Deployment)
+Full walkthrough: [Deployment](deployment)
 
 ## Docs
 
 | Page | Contents |
 |---|---|
-| [Architecture](Architecture) | request flow, KV schema, reconciliation, security model |
-| [Deployment](Deployment) | zero → live runbook |
-| [Clients](Clients) | importing links into v2rayN / v2rayNG |
-| [Operations](Operations) | IP-burn lifecycle, cost, troubleshooting |
+| [Architecture](architecture) | request flow, KV schema, reconciliation, security model |
+| [Deployment](deployment) | zero → live runbook |
+| [Clients](clients) | importing links into v2rayN / v2rayNG |
+| [Operations](operations) | IP-burn lifecycle, cost, troubleshooting |

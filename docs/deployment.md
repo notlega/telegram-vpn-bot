@@ -104,13 +104,13 @@ Expected: `webhook set: ... (secret token enabled)`.
 2. Bot `/id` → matches `ALLOWED_USER_ID`
 3. Bot `/up` → pick a region → status message appears
 4. ~2 minutes later → link + QR arrive
-5. Import the link in a client (see [Clients](Clients)) and load `ifconfig.me`. It
+5. Import the link in a client (see [Clients](clients)) and load `ifconfig.me`. It
    must show the new server IP
 6. Bot `/status` → shows `ready/running`
 7. Bot `/down` → confirm → instance disappears from the Vultr console
 
 If step 4 fails, open the instance in the Vultr console and read
-`/var/log/vpn-setup.log`, then see the troubleshooting table in [Operations](Operations).
+`/var/log/vpn-setup.log`, then see the troubleshooting table in [Operations](operations).
 
 ## Updates
 

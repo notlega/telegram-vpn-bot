@@ -37,15 +37,15 @@ Vultr IP and a warning. Provisioning records fail after 15 minutes.
 
 ## Documentation
 
-Extended docs live in [`docs/`](docs/Home.md) and mirror the
+Extended docs live in [`docs/`](docs/home.md) and mirror the
 [GitHub wiki](https://github.com/notlega/telegram-vpn-bot/wiki):
 
 | Page | Contents |
 |---|---|
-| [Architecture](docs/Architecture.md) | request flow, KV schema, reconciliation, security model |
-| [Deployment](docs/Deployment.md) | zero → live runbook |
-| [Clients](docs/Clients.md) | importing links into v2rayN / v2rayNG |
-| [Operations](docs/Operations.md) | IP-burn lifecycle, cost, troubleshooting |
+| [Architecture](docs/architecture.md) | request flow, KV schema, reconciliation, security model |
+| [Deployment](docs/deployment.md) | zero → live runbook |
+| [Clients](docs/clients.md) | importing links into v2rayN / v2rayNG |
+| [Operations](docs/operations.md) | IP-burn lifecycle, cost, troubleshooting |
 
 ## Setup
 

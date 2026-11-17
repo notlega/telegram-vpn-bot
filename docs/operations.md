@@ -88,5 +88,5 @@ cat /var/log/vpn-setup.log
 - Single Vultr account, no multi-tenant isolation
 - No automatic block detection; humans decide when to rotate IPs
 - No SSH provisioning path; if cloud-init is unavailable the bootstrap cannot
-  run (see `OS_NAME` note in [Deployment](Deployment))
+  run (see `OS_NAME` note in [Deployment](deployment))
 - One region per instance; there is no load balancing
