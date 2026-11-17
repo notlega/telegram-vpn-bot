@@ -6,15 +6,16 @@ out, fresh credentials per server, no always-on process to babysit.
 
 ## What it does
 
-- `/up` — pick a region (Seoul / Tokyo / Singapore), bot creates a Vultr
-  instance, waits for it to bootstrap Xray, then posts a ready-to-import
-  `vless://` link plus a QR code
-- `/down` — destroy a tracked instance (two-step confirmation)
-- `/status` — tracked servers with age and live power state
-- `/id` — print your Telegram id (setup helper)
+- `/up`: choose a region (Seoul / Tokyo / Singapore). The bot creates a Vultr
+  instance, waits for it to bootstrap Xray, then posts an importable
+  `vless://` link and a QR code.
+- `/down`: destroy a tracked instance (two-step confirmation).
+- `/status`: tracked servers with age and live power state.
+- `/id`: print your Telegram id (setup helper).
 
-Every server gets a **new X25519 key pair, UUID and short id**, generated with
-WebCrypto inside the worker. Nothing secret is stored anywhere but Workers KV.
+Every server gets a new X25519 key pair, UUID and short id, generated with
+WebCrypto inside the worker. Workers KV holds the registry; each share link is
+a bearer credential, so treat it as a secret.
 
 ## Architecture
 
@@ -29,12 +30,22 @@ Telegram ──webhook──> Worker (grammY) ──REST──> Vultr API
 cron (* * * * *) ──> reconcile provisioning records, publish links
 ```
 
-- **State**: Workers KV (`inst:<id>`, `secret:<token>`)
-- **Boot detection**: cloud-init script calls `/ready` with a per-instance
-  token; cron also reconciles if the callback is lost
-- **Readiness fallback**: 8 minutes after create, a running instance is
-  published with its Vultr IP and a warning
-- **Timeout**: provisioning records fail after 15 minutes
+State lives in Workers KV (`inst:<id>`, `secret:<token>`). A cloud-init script
+calls `/ready` with a per-instance token, and cron reconciles when that callback
+is lost. Eight minutes after create, a running instance is published with its
+Vultr IP and a warning. Provisioning records fail after 15 minutes.
+
+## Documentation
+
+Extended docs live in [`docs/`](docs/Home.md) and mirror the
+[GitHub wiki](https://github.com/notlega/telegram-vpn-bot/wiki):
+
+| Page | Contents |
+|---|---|
+| [Architecture](docs/Architecture.md) | request flow, KV schema, reconciliation, security model |
+| [Deployment](docs/Deployment.md) | zero → live runbook |
+| [Clients](docs/Clients.md) | importing links into v2rayN / v2rayNG |
+| [Operations](docs/Operations.md) | IP-burn lifecycle, cost, troubleshooting |
 
 ## Setup
 
@@ -103,14 +114,14 @@ user-data; Vultr's Alpine images do not ship it.
 - Allowlist enforced on every update (`ALLOWED_USER_ID`, comma separated)
 - Telegram webhook requires `X-Telegram-Bot-Api-Secret-Token`
 - Destroy always requires an inline confirmation
-- Credentials never leave KV/Telegram; the bot never stores SSH keys and no
-  SSH port is exposed by the provisioning script
+- Credentials are generated per instance and never written to the repository.
+  The bot installs no SSH key, so a provisioned box has no remote shell.
 - Links are single-server secrets: anyone with the link can use the proxy
 
 ## Limits
 
 - One Vultr account token, no multi-tenant support
-- No automatic GFW/IP-burn detection — `/status` shows state, humans decide
+- No automatic GFW/IP-burn detection; `/status` shows state and humans decide
 - Provisioning assumes Vultr's Debian images and user-data support
 - `vc2-1c-1g` availability varies per region; a Vultr 4xx will be reported in
   chat
