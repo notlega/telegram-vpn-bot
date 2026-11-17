@@ -1,22 +1,18 @@
-#!/usr/bin/env bun
 /**
- * Pushes worker secrets from .env to Cloudflare.
+ * Pushes worker secrets from .env to Cloudflare
  *
  * Usage: bun scripts/secrets.ts
  *
- * Uses the project-local wrangler from node_modules (installed by `bun install`),
- * falling back to a global wrangler when present.
+ * Uses the project-local wrangler from node_modules (installed by `bun install`)
  */
 
 const SECRETS = ["BOT_TOKEN", "VULTR_API_TOKEN", "ALLOWED_USER_ID", "WEBHOOK_SECRET"] as const;
 
-const localWrangler = new URL("../node_modules/.bin/wrangler", import.meta.url).pathname;
-const wrangler = (await Bun.file(localWrangler).exists())
-  ? localWrangler
-  : (Bun.which("wrangler") ?? null);
+const wrangler = new URL("../node_modules/.bin/wrangler", import.meta.url).pathname;
+const wranglerExists = await Bun.file(wrangler).exists();
 
-if (!wrangler) {
-  console.error("wrangler not found. Run `bun install`, then `bunx wrangler login`.");
+if (!wranglerExists) {
+  console.error("wrangler not found. run `bun install`, then `bunx wrangler login`.");
   process.exit(1);
 }
 
@@ -42,6 +38,7 @@ for (const name of SECRETS) {
   await proc.stdin.end();
 
   const code = await proc.exited;
+
   if (code !== 0) {
     console.error(`failed to push ${name} (exit ${code})`);
     process.exit(1);
@@ -52,6 +49,9 @@ for (const name of SECRETS) {
 }
 
 console.log(`done: ${pushed} pushed, ${skipped} skipped`);
-if (pushed === 0) process.exit(1);
+
+if (pushed === 0) {
+  process.exit(1);
+}
 
 export {};
