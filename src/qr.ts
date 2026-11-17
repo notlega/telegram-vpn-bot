@@ -1,0 +1,26 @@
+import qrcode from "qrcode-generator";
+import { encodeGrayscalePng } from "./png";
+
+/** Rasterises a QR code into a grayscale PNG (no canvas needed). */
+export async function qrPng(text: string, scale = 8, quietZone = 4): Promise<Uint8Array> {
+  const qr = qrcode(0, "M");
+  qr.addData(text);
+  qr.make();
+
+  const modules = qr.getModuleCount();
+  const size = (modules + quietZone * 2) * scale;
+  const pixels = new Uint8Array(size * size).fill(255);
+
+  for (let row = 0; row < modules; row += 1) {
+    for (let col = 0; col < modules; col += 1) {
+      if (!qr.isDark(row, col)) continue;
+      const startX = (col + quietZone) * scale;
+      const startY = (row + quietZone) * scale;
+      for (let y = 0; y < scale; y += 1) {
+        pixels.fill(0, (startY + y) * size + startX, (startY + y) * size + startX + scale);
+      }
+    }
+  }
+
+  return encodeGrayscalePng(pixels, size, size);
+}
