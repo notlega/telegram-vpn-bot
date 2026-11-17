@@ -6,14 +6,14 @@ import { describeProvisioning, findRegion, parseRegions, provisionServer } from 
 import { destroyInstance, listInstances, VultrError } from "./vultr";
 
 const WELCOME = [
-  "VPN fleet bot",
+  "telegram-vpn-bot",
   "",
-  "/up — create a VLESS+REALITY server",
+  "/up — create a VLESS + REALITY server",
   "/down — destroy a server",
   "/status — list tracked servers",
   "/id — show your Telegram id",
   "",
-  "Only allowlisted users can control the fleet.",
+  "Only allowlisted users can control the vpn servers.",
 ].join("\n");
 
 function errorText(error: unknown): string {
@@ -28,13 +28,15 @@ async function startProvision(
   region: Region,
 ): Promise<void> {
   const placeholder = await api.sendMessage(chatId, `🛠 Creating ${region.label} server…`);
+
   try {
     const record = await provisionServer(env, publicUrl, chatId, placeholder.message_id, region);
     await api.editMessageText(chatId, placeholder.message_id, describeProvisioning(record));
   } catch (error) {
+    console.error("provision failed", error);
     await api
       .editMessageText(chatId, placeholder.message_id, `❌ ${region.label}: ${errorText(error)}`)
-      .catch(() => undefined);
+      .catch((notifyError) => console.warn("provision failure notice failed", notifyError));
   }
 }
 
@@ -46,30 +48,30 @@ export function createBot(env: Env, publicUrl: string): Bot {
       .filter(Boolean),
   );
 
-  bot.use(async (ctx, next) => {
-    if (!ctx.from || !allowed.has(String(ctx.from.id))) {
-      if (ctx.chat)
-        await ctx
-          .reply(`Unauthorized. Your id: ${ctx.from?.id ?? "unknown"}`)
-          .catch(() => undefined);
+  bot.use(async (context, next) => {
+    if (!context.from || !allowed.has(String(context.from.id))) {
+      if (context.chat)
+        await context
+          .reply(`Unauthorized. Your id: ${context.from?.id ?? "unknown"}`)
+          .catch((error) => console.warn("unauthorized notice failed", error));
       return;
     }
     await next();
   });
 
-  bot.command("start", (ctx) => ctx.reply(WELCOME));
-  bot.command("help", (ctx) => ctx.reply(WELCOME));
-  bot.command("id", (ctx) => ctx.reply(`Your Telegram id: ${ctx.from?.id}`));
+  bot.command("start", (context) => context.reply(WELCOME));
+  bot.command("help", (context) => context.reply(WELCOME));
+  bot.command("id", (context) => context.reply(`Your Telegram id: ${context.from?.id}`));
 
-  bot.command("up", async (ctx) => {
-    const argument = ctx.match.trim();
+  bot.command("up", async (context) => {
+    const argument = context.match.trim();
     if (!argument) {
       const keyboard = new InlineKeyboard();
       parseRegions(env).forEach((region, index) => {
         if (index > 0 && index % 2 === 0) keyboard.row();
         keyboard.text(region.label, `up:${region.id}`);
       });
-      await ctx.reply("Choose a region:", { reply_markup: keyboard });
+      await context.reply("Choose a region:", { reply_markup: keyboard });
       return;
     }
 
@@ -80,7 +82,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       );
 
     if (!region) {
-      await ctx.reply(
+      await context.reply(
         `Unknown region "${argument}". Try: ${parseRegions(env)
           .map((r) => r.id)
           .join(", ")}`,
@@ -88,91 +90,98 @@ export function createBot(env: Env, publicUrl: string): Bot {
       return;
     }
 
-    await startProvision(ctx.api, env, publicUrl, ctx.chat.id, region);
+    await startProvision(context.api, env, publicUrl, context.chat.id, region);
   });
 
-  bot.callbackQuery(/^up:(.+)$/, async (ctx) => {
-    const region = findRegion(env, ctx.match[1] ?? "");
-    await ctx.answerCallbackQuery(region ? `Creating ${region.label}…` : "Unknown region");
-    if (!region || !ctx.chat) return;
-    await startProvision(ctx.api, env, publicUrl, ctx.chat.id, region);
+  bot.callbackQuery(/^up:(.+)$/, async (context) => {
+    const region = findRegion(env, context.match[1] ?? "");
+    await context.answerCallbackQuery(region ? `Creating ${region.label}…` : "Unknown region");
+    if (!region || !context.chat) return;
+    await startProvision(context.api, env, publicUrl, context.chat.id, region);
   });
 
-  bot.command("down", async (ctx) => {
+  bot.command("down", async (context) => {
     const records = await listInstanceRecords(env.KV);
     if (records.length === 0) {
-      await ctx.reply("Nothing to destroy.");
+      await context.reply("Nothing to destroy.");
       return;
     }
     const keyboard = new InlineKeyboard();
     for (const record of records) {
       keyboard.text(`${record.regionLabel} · ${record.ip}`, `down:${record.id}`).row();
     }
-    await ctx.reply("Destroy which server?", { reply_markup: keyboard });
+    await context.reply("Destroy which server?", { reply_markup: keyboard });
   });
 
-  bot.callbackQuery(/^down:(.+)$/, async (ctx) => {
-    const record = await getInstance(env.KV, ctx.match[1] ?? "");
+  bot.callbackQuery(/^down:(.+)$/, async (context) => {
+    const record = await getInstance(env.KV, context.match[1] ?? "");
     if (!record) {
-      await ctx.answerCallbackQuery("Server is gone");
+      await context.answerCallbackQuery("Server is gone");
       return;
     }
-    await ctx.answerCallbackQuery();
+    await context.answerCallbackQuery();
     const keyboard = new InlineKeyboard()
       .text("Yes, destroy", `confirm:${record.id}`)
       .text("Cancel", `cancel:${record.id}`);
-    await ctx
+    await context
       .editMessageText(`Destroy ${record.regionLabel} (${record.ip})?\nThis cannot be undone.`, {
         reply_markup: keyboard,
       })
-      .catch(() => undefined);
+      .catch((error) => console.warn("destroy confirmation render failed", error));
   });
 
-  bot.callbackQuery(/^confirm:(.+)$/, async (ctx) => {
-    const id = ctx.match[1] ?? "";
+  bot.callbackQuery(/^confirm:(.+)$/, async (context) => {
+    const id = context.match[1] ?? "";
     const record = await getInstance(env.KV, id);
     if (!record) {
-      await ctx.answerCallbackQuery("Already gone");
+      await context.answerCallbackQuery("Already gone");
       return;
     }
-    await ctx.answerCallbackQuery("Destroying…");
+    await context.answerCallbackQuery("Destroying…");
     try {
       await destroyInstance(env.VULTR_API_TOKEN, id).catch((error: unknown) => {
         if (error instanceof VultrError && error.status === 404) return;
         throw error;
       });
       await deleteInstanceRecord(env.KV, record);
-      await ctx
+      await context
         .editMessageText(`🗑 Destroyed ${record.regionLabel} (${record.ip})`)
-        .catch(() => undefined);
+        .catch((error) => console.warn("destroyed notice failed", error));
     } catch (error) {
-      await ctx.editMessageText(`❌ Destroy failed: ${errorText(error)}`).catch(() => undefined);
+      console.error("destroy failed", error);
+      await context
+        .editMessageText(`❌ Destroy failed: ${errorText(error)}`)
+        .catch((noticeError) => console.warn("destroy failure notice failed", noticeError));
     }
   });
 
-  bot.callbackQuery(/^cancel:(.+)$/, async (ctx) => {
-    await ctx.answerCallbackQuery("Cancelled");
-    await ctx.editMessageText("Cancelled.").catch(() => undefined);
+  bot.callbackQuery(/^cancel:(.+)$/, async (context) => {
+    await context.answerCallbackQuery("Cancelled");
+    await context
+      .editMessageText("Cancelled.")
+      .catch((error) => console.warn("cancel notice failed", error));
   });
 
-  bot.command("status", async (ctx) => {
+  bot.command("status", async (context) => {
     const records = await listInstanceRecords(env.KV);
     const live = new Map<string, string>();
     try {
       for (const instance of await listInstances(env.VULTR_API_TOKEN)) {
         live.set(instance.id, instance.power_status);
       }
-    } catch {
-      // Live state is best effort; KV state still renders.
+    } catch (error) {
+      console.warn("live instance fetch failed, showing cached state", error);
     }
-    await ctx.reply(statusMessage(records, live));
+    await context.reply(statusMessage(records, live));
   });
 
   bot.catch(async (error) => {
     console.error("bot error", error);
     const chatId = error.ctx.chat?.id;
     if (chatId)
-      await error.ctx.api.sendMessage(chatId, `⚠️ ${errorText(error.error)}`).catch(() => undefined);
+      await error.ctx.api
+        .sendMessage(chatId, `⚠️ ${errorText(error.error)}`)
+        .catch((notifyError) => console.warn("error notice failed", notifyError));
   });
 
   return bot;

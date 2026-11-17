@@ -12,8 +12,11 @@ const TIMEOUT_MS = 15 * 60_000;
 async function replaceOrSend(api: Api, record: InstanceRecord, text: string): Promise<void> {
   try {
     await api.editMessageText(record.chatId, record.messageId, text);
-  } catch {
-    await api.sendMessage(record.chatId, text).catch(() => undefined);
+  } catch (editError) {
+    console.warn("message edit failed, sending a new one", editError);
+    await api
+      .sendMessage(record.chatId, text)
+      .catch((error) => console.error("publish message failed", error));
   }
 }
 
@@ -28,7 +31,7 @@ export async function publishReady(env: Env, record: InstanceRecord, note?: stri
     .sendPhoto(record.chatId, new InputFile(png, `vpn-${record.region}.png`), {
       caption: `${record.regionLabel} · ${record.ip}`,
     })
-    .catch(() => undefined);
+    .catch((error) => console.warn("qr photo send failed", error));
 }
 
 /** Cloud-init completion callback: /ready?token=…&ip=… */
