@@ -16,10 +16,26 @@ const WELCOME = [
   "Only allowlisted users can control the vpn servers.",
 ].join("\n");
 
+/**
+ * Extracts a human readable message from an unknown thrown value.
+ *
+ * @param error — value caught from a promise or try block.
+ * @returns `error.message` for Error instances, `String(error)` otherwise.
+ */
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Posts a placeholder, provisions the server, then replaces the placeholder
+ * with either the progress description or the failure reason.
+ *
+ * @param api — grammY API client.
+ * @param env — worker bindings.
+ * @param publicUrl — worker origin used for the completion callback.
+ * @param chatId — chat that receives progress updates.
+ * @param region — region to deploy in.
+ */
 async function startProvision(
   api: Api,
   env: Env,
@@ -40,6 +56,14 @@ async function startProvision(
   }
 }
 
+/**
+ * Builds the bot: allowlist middleware, command handlers, callback handlers and
+ * the error boundary. Stateless — one instance is created per webhook request.
+ *
+ * @param env — worker bindings.
+ * @param publicUrl — worker origin used when provisioning new servers.
+ * @returns a grammY bot ready to receive updates.
+ */
 export function createBot(env: Env, publicUrl: string): Bot {
   const bot = new Bot(env.BOT_TOKEN);
   const allowed = new Set(
@@ -54,8 +78,10 @@ export function createBot(env: Env, publicUrl: string): Bot {
         await context
           .reply(`Unauthorized. Your id: ${context.from?.id ?? "unknown"}`)
           .catch((error) => console.warn("unauthorized notice failed", error));
+
       return;
     }
+
     await next();
   });
 
@@ -65,12 +91,15 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
   bot.command("up", async (context) => {
     const argument = context.match.trim();
+
     if (!argument) {
       const keyboard = new InlineKeyboard();
+
       parseRegions(env).forEach((region, index) => {
         if (index > 0 && index % 2 === 0) keyboard.row();
         keyboard.text(region.label, `up:${region.id}`);
       });
+
       await context.reply("Choose a region:", { reply_markup: keyboard });
       return;
     }
@@ -95,34 +124,46 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
   bot.callbackQuery(/^up:(.+)$/, async (context) => {
     const region = findRegion(env, context.match[1] ?? "");
+
     await context.answerCallbackQuery(region ? `Creating ${region.label}…` : "Unknown region");
-    if (!region || !context.chat) return;
+
+    if (!region || !context.chat) {
+      return;
+    }
+
     await startProvision(context.api, env, publicUrl, context.chat.id, region);
   });
 
   bot.command("down", async (context) => {
     const records = await listInstanceRecords(env.KV);
+
     if (records.length === 0) {
       await context.reply("Nothing to destroy.");
       return;
     }
+
     const keyboard = new InlineKeyboard();
+
     for (const record of records) {
       keyboard.text(`${record.regionLabel} · ${record.ip}`, `down:${record.id}`).row();
     }
+
     await context.reply("Destroy which server?", { reply_markup: keyboard });
   });
 
   bot.callbackQuery(/^down:(.+)$/, async (context) => {
     const record = await getInstance(env.KV, context.match[1] ?? "");
+
     if (!record) {
       await context.answerCallbackQuery("Server is gone");
       return;
     }
+
     await context.answerCallbackQuery();
     const keyboard = new InlineKeyboard()
       .text("Yes, destroy", `confirm:${record.id}`)
       .text("Cancel", `cancel:${record.id}`);
+
     await context
       .editMessageText(`Destroy ${record.regionLabel} (${record.ip})?\nThis cannot be undone.`, {
         reply_markup: keyboard,
@@ -133,14 +174,20 @@ export function createBot(env: Env, publicUrl: string): Bot {
   bot.callbackQuery(/^confirm:(.+)$/, async (context) => {
     const id = context.match[1] ?? "";
     const record = await getInstance(env.KV, id);
+
     if (!record) {
       await context.answerCallbackQuery("Already gone");
       return;
     }
+
     await context.answerCallbackQuery("Destroying…");
+
     try {
       await destroyInstance(env.VULTR_API_TOKEN, id).catch((error: unknown) => {
-        if (error instanceof VultrError && error.status === 404) return;
+        if (error instanceof VultrError && error.status === 404) {
+          return;
+        }
+
         throw error;
       });
       await deleteInstanceRecord(env.KV, record);
@@ -165,6 +212,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
   bot.command("status", async (context) => {
     const records = await listInstanceRecords(env.KV);
     const live = new Map<string, string>();
+
     try {
       for (const instance of await listInstances(env.VULTR_API_TOKEN)) {
         live.set(instance.id, instance.power_status);
@@ -172,16 +220,19 @@ export function createBot(env: Env, publicUrl: string): Bot {
     } catch (error) {
       console.warn("live instance fetch failed, showing cached state", error);
     }
+
     await context.reply(statusMessage(records, live));
   });
 
   bot.catch(async (error) => {
     console.error("bot error", error);
     const chatId = error.ctx.chat?.id;
-    if (chatId)
+
+    if (chatId) {
       await error.ctx.api
         .sendMessage(chatId, `⚠️ ${errorText(error.error)}`)
         .catch((notifyError) => console.warn("error notice failed", notifyError));
+    }
   });
 
   return bot;

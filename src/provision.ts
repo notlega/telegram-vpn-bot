@@ -12,6 +12,12 @@ import {
   type VultrInstance,
 } from "./vultr";
 
+/**
+ * Parses the `REGIONS` configuration string into region options.
+ *
+ * @param env — worker bindings; only `REGIONS` is read.
+ * @returns regions in menu order; malformed entries are dropped.
+ */
 export function parseRegions(env: Env): Region[] {
   return env.REGIONS.split(",")
     .map((entry) => entry.split(":"))
@@ -22,10 +28,32 @@ export function parseRegions(env: Env): Region[] {
     .map(([id, label]) => ({ id: id.trim(), label: label.trim() }));
 }
 
+/**
+ * Finds a region by id.
+ *
+ * @param env — worker bindings.
+ * @param id — Vultr region id such as `icn`.
+ * @returns the region, or `undefined` when not configured.
+ */
 export function findRegion(env: Env, id: string): Region | undefined {
   return parseRegions(env).find((region) => region.id === id);
 }
 
+/**
+ * Creates a Vultr instance and registers it for reconciliation.
+ *
+ * Generates a fresh key pair, UUID and short id, resolves the OS image and plan
+ * from the live Vultr catalogs, then submits the bootstrap script as user-data.
+ *
+ * @param env — worker bindings.
+ * @param publicUrl — origin of the deployed worker, used to build the callback.
+ * @param chatId — chat that should receive the status updates.
+ * @param messageId — status message the bot edits when the server is ready.
+ * @param region — region selected by the operator.
+ * @returns the newly stored instance record.
+ * @throws {Error} when the OS family or plan cannot be resolved, or Vultr
+ *   refuses the request.
+ */
 export async function provisionServer(
   env: Env,
   publicUrl: string,
@@ -99,6 +127,12 @@ export async function provisionServer(
   return record;
 }
 
+/**
+ * Renders the intermediate "creating server" chat message.
+ *
+ * @param record — record stored right after the instance was created.
+ * @returns plain-text message body.
+ */
 export function describeProvisioning(record: InstanceRecord): string {
   return [
     `🛠 Creating ${record.regionLabel} server`,
