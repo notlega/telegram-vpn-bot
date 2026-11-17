@@ -78,7 +78,7 @@ relying on `wrangler login`; both `bun run secrets` and `bun run deploy` use it.
 | Var       | Default                             | Meaning                                            |
 | --------- | ----------------------------------- | -------------------------------------------------- |
 | `REGIONS` | `icn:Seoul,nrt:Tokyo,sgp:Singapore` | region buttons in `/up`                            |
-| `PLAN`    | `vc2-1c-1g`                         | Vultr plan id (≈$6/mo)                             |
+| `PLAN`    | `vc2-1c-1g`                         | Vultr plan id (≈$5/mo, backups disabled)           |
 | `OS_NAME` | `Debian`                            | OS family prefix, resolved to the newest x64 image |
 | `SNI`     | `www.yahoo.com`                     | REALITY camouflage destination                     |
 

@@ -2,15 +2,14 @@
 
 ## Request flow
 
-```
-Telegram ──webhook──> Worker (grammY) ──REST──> Vultr API
-                        │                        │
-                        │                    new VPS boots
-                        │                  user-data script:
-                        │                  installs Xray, systemd unit,
-                        │                  BBR, then calls back
-                        └──/ready?token=…<──────────┘
-cron (* * * * *) ──> reconcile provisioning records, publish links
+```mermaid
+flowchart LR
+    tg[Telegram] -- webhook --> w[Worker · grammY]
+    w -- REST --> v[Vultr API]
+    v -- boots --> vps["VPS · user-data installs Xray, systemd unit, BBR"]
+    vps -- "GET /ready?token=…" --> w
+    cron["cron (* * * * *)"] -- reconcile provisioning records, publish links --> w
+    w <---> kv[(Workers KV)]
 ```
 
 The worker has three HTTP routes:

@@ -19,15 +19,14 @@ a bearer credential, so treat it as a secret.
 
 ## Architecture
 
-```
-Telegram ──webhook──> Worker (grammY) ──REST──> Vultr API
-                        │                        │
-                        │                    new VPS boots
-                        │                  user-data script:
-                        │                  installs Xray, systemd unit,
-                        │                  BBR, then calls back
-                        └──/ready?token=…<──────────┘
-cron (* * * * *) ──> reconcile provisioning records, publish links
+```mermaid
+flowchart LR
+    tg[Telegram] -- webhook --> w[Worker · grammY]
+    w -- REST --> v[Vultr API]
+    v -- boots --> vps["VPS · user-data installs Xray, systemd unit, BBR"]
+    vps -- "GET /ready?token=…" --> w
+    cron["cron (* * * * *)"] -- reconcile provisioning records, publish links --> w
+    w <---> kv[(Workers KV)]
 ```
 
 State lives in Workers KV (`inst:<id>`, `secret:<token>`). A cloud-init script
@@ -58,11 +57,11 @@ Extended docs live in [`docs/`](docs/home.md) and mirror the
 
 ### 2. Local tooling
 
-Requires [Bun](https://bun.sh). Wrangler is a project devDependency, so
+Requires [bun](https://bun.sh) 1.2+. Wrangler is a project devDependency, so
 `bun install` pins the CLI to this checkout.
 
 ```sh
-bun --version                 # 1.2+
+bun --version
 bun install
 bunx wrangler login
 ```
@@ -77,9 +76,12 @@ Copy the printed `id` into `wrangler.toml` (`REPLACE_WITH_KV_NAMESPACE_ID`).
 
 ### 4. Secrets
 
+Copy `.env.example` to `.env` and update the values within.
+`bun run secrets` pushes them to the worker's encrypted secrets.
+
 ```sh
-cp .env.example .env           # fill in BOT_TOKEN, VULTR_API_TOKEN, ALLOWED_USER_ID, WEBHOOK_SECRET
-bun run secrets                # pushes all four to Cloudflare via wrangler
+cp .env.example .env
+bun run secrets
 ```
 
 Bun loads `.env` automatically, so the helper scripts need no extra setup.
@@ -88,9 +90,12 @@ it.
 
 ### 5. Deploy and register the webhook
 
+Replace `<workers-url>` with your deployment URL, e.g.
+`https://telegram-vpn-bot.your-subdomain.workers.dev`.
+
 ```sh
 bun run deploy
-bun run set-webhook -- https://telegram-vpn-bot.<subdomain>.workers.dev
+bun run set-webhook -- <workers-url>
 ```
 
 ### 6. Use it
@@ -104,7 +109,7 @@ Open the bot, `/id` to double check the allowlist, then `/up`.
 | Var       | Meaning                                                                          |
 | --------- | -------------------------------------------------------------------------------- |
 | `REGIONS` | `id:label` pairs offered in the `/up` menu (`icn:Seoul,nrt:Tokyo,sgp:Singapore`) |
-| `PLAN`    | Vultr plan id, default `vc2-1c-1g` (~$6/mo)                                      |
+| `PLAN`    | Vultr plan id, default `vc2-1c-1g` without backups enabled (~$5/mo)              |
 | `OS_NAME` | OS family prefix to resolve dynamically, default `Debian`                        |
 | `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                          |
 
@@ -125,16 +130,15 @@ user-data; Vultr's Alpine images do not ship it.
 - One Vultr account token, no multi-tenant support
 - No automatic GFW/IP-burn detection; `/status` shows state and humans decide
 - Provisioning assumes Vultr's Debian images and user-data support
-- `vc2-1c-1g` availability varies per region; a Vultr 4xx will be reported in
-  chat
+- `vc2-1c-1g` availability varies per region; a Vultr 4xx will be reported in chat
 
 ## Development
 
 ```sh
-bun run dev                 # wrangler dev, local worker + local KV
-bun run check               # typecheck + biome
-bun run lint                # biome check
-bun run format              # biome format --write
+bun run dev     # wrangler dev, local worker + local KV
+bun run check   # typecheck + biome
+bun run lint    # biome check
+bun run format  # biome format --write
 curl http://127.0.0.1:8787/
 ```
 
@@ -147,5 +151,4 @@ curl "http://127.0.0.1:8787/ready?token=testtoken&ip=203.0.113.10"
 ```
 
 `wrangler dev` loads `.env` automatically (add `--env-file path` for another
-file). A local `.dev.vars` file, if present, takes precedence over `.env` for
-local development only.
+file).

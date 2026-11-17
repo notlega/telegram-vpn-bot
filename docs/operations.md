@@ -35,11 +35,11 @@ client profiles are per-link, so add the new one and delete the old one.
 
 ## Cost
 
-| Item                             | Cost                          |
-| -------------------------------- | ----------------------------- |
-| Cloudflare Workers + KV + cron   | $0 (free tier)                |
-| Vultr `vc2-1c-1g` (1 vCPU, 1 GB) | ≈ $6/month per running server |
-| Destroyed instances              | $0                            |
+| Item                                               | Cost                          |
+| -------------------------------------------------- | ----------------------------- |
+| Cloudflare Workers + KV + cron                     | $0 (free tier)                |
+| Vultr `vc2-1c-1g` (1 vCPU, 1 GB, backups disabled) | ≈ $5/month per running server |
+| Destroyed instances                                | $0                            |
 
 The bot itself is free; only live instances bill. Destroy old instances
 promptly, and use `/status` as the inventory.
