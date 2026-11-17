@@ -1,0 +1,21 @@
+name = "telegram-vpn-bot"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[observability]
+enabled = true
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+SNI = "www.yahoo.com"
+REGIONS = "icn:Seoul,nrt:Tokyo,sgp:Singapore"
+PLAN = "vc2-1c-1g"
+OS_NAME = "Debian"

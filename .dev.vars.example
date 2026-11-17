@@ -1,0 +1,11 @@
+# Telegram bot token from @BotFather
+BOT_TOKEN=
+
+# Vultr API token: https://my.vultr.com/settings/#settingsapi
+VULTR_API_TOKEN=
+
+# Comma separated Telegram user ids allowed to control the bot (@userinfobot)
+ALLOWED_USER_ID=
+
+# Random string; must match the webhook secret_token registered with Telegram
+WEBHOOK_SECRET=
