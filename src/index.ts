@@ -26,7 +26,11 @@ export default {
     return new Response("not found\n", { status: 404 });
   },
 
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
     ctx.waitUntil(reconcile(env));
   },
 };

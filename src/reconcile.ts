@@ -1,4 +1,4 @@
-import { Bot, type Api, InputFile } from "grammy";
+import { type Api, Bot, InputFile } from "grammy";
 import type { Env, InstanceRecord } from "./env";
 import { getInstanceBySecret, listInstanceRecords, saveInstance } from "./kv";
 import { failedMessage, readyMessage, recordLink } from "./messages";
@@ -87,9 +87,11 @@ export async function reconcile(env: Env): Promise<void> {
     if (instance.power_status === "running" && ip !== "pending" && age > READY_FALLBACK_MS) {
       const updated: InstanceRecord = { ...record, ip, state: "ready", readyAt: Date.now() };
       await saveInstance(env.KV, updated);
-      await publishReady(env, updated, "Note: bootstrap callback was not received; link uses the Vultr IP.").catch(
-        (error) => console.error("publishReady fallback failed", error),
-      );
+      await publishReady(
+        env,
+        updated,
+        "Note: bootstrap callback was not received; link uses the Vultr IP.",
+      ).catch((error) => console.error("publishReady fallback failed", error));
       continue;
     }
 

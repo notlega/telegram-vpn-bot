@@ -22,7 +22,10 @@ export async function getInstance(kv: KVNamespace, id: string): Promise<Instance
   return kv.get<InstanceRecord>(instanceKey(id), "json");
 }
 
-export async function getInstanceBySecret(kv: KVNamespace, secret: string): Promise<InstanceRecord | null> {
+export async function getInstanceBySecret(
+  kv: KVNamespace,
+  secret: string,
+): Promise<InstanceRecord | null> {
   const id = await kv.get(secretKey(secret));
   if (!id) return null;
   return getInstance(kv, id);

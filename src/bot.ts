@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard, type Api } from "grammy";
+import { type Api, Bot, InlineKeyboard } from "grammy";
 import type { Env, Region } from "./env";
 import { deleteInstanceRecord, getInstance, listInstanceRecords } from "./kv";
 import { statusMessage } from "./messages";
@@ -20,7 +20,13 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-async function startProvision(api: Api, env: Env, publicUrl: string, chatId: number, region: Region): Promise<void> {
+async function startProvision(
+  api: Api,
+  env: Env,
+  publicUrl: string,
+  chatId: number,
+  region: Region,
+): Promise<void> {
   const placeholder = await api.sendMessage(chatId, `🛠 Creating ${region.label} server…`);
   try {
     const record = await provisionServer(env, publicUrl, chatId, placeholder.message_id, region);
@@ -42,7 +48,10 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
   bot.use(async (ctx, next) => {
     if (!ctx.from || !allowed.has(String(ctx.from.id))) {
-      if (ctx.chat) await ctx.reply(`Unauthorized. Your id: ${ctx.from?.id ?? "unknown"}`).catch(() => undefined);
+      if (ctx.chat)
+        await ctx
+          .reply(`Unauthorized. Your id: ${ctx.from?.id ?? "unknown"}`)
+          .catch(() => undefined);
       return;
     }
     await next();
@@ -66,10 +75,16 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
     const region =
       findRegion(env, argument) ??
-      parseRegions(env).find((candidate) => candidate.label.toLowerCase() === argument.toLowerCase());
+      parseRegions(env).find(
+        (candidate) => candidate.label.toLowerCase() === argument.toLowerCase(),
+      );
 
     if (!region) {
-      await ctx.reply(`Unknown region "${argument}". Try: ${parseRegions(env).map((r) => r.id).join(", ")}`);
+      await ctx.reply(
+        `Unknown region "${argument}". Try: ${parseRegions(env)
+          .map((r) => r.id)
+          .join(", ")}`,
+      );
       return;
     }
 
@@ -106,10 +121,11 @@ export function createBot(env: Env, publicUrl: string): Bot {
     const keyboard = new InlineKeyboard()
       .text("Yes, destroy", `confirm:${record.id}`)
       .text("Cancel", `cancel:${record.id}`);
-    await ctx.editMessageText(
-      `Destroy ${record.regionLabel} (${record.ip})?\nThis cannot be undone.`,
-      { reply_markup: keyboard },
-    ).catch(() => undefined);
+    await ctx
+      .editMessageText(`Destroy ${record.regionLabel} (${record.ip})?\nThis cannot be undone.`, {
+        reply_markup: keyboard,
+      })
+      .catch(() => undefined);
   });
 
   bot.callbackQuery(/^confirm:(.+)$/, async (ctx) => {
@@ -126,7 +142,9 @@ export function createBot(env: Env, publicUrl: string): Bot {
         throw error;
       });
       await deleteInstanceRecord(env.KV, record);
-      await ctx.editMessageText(`🗑 Destroyed ${record.regionLabel} (${record.ip})`).catch(() => undefined);
+      await ctx
+        .editMessageText(`🗑 Destroyed ${record.regionLabel} (${record.ip})`)
+        .catch(() => undefined);
     } catch (error) {
       await ctx.editMessageText(`❌ Destroy failed: ${errorText(error)}`).catch(() => undefined);
     }
@@ -153,7 +171,8 @@ export function createBot(env: Env, publicUrl: string): Bot {
   bot.catch(async (error) => {
     console.error("bot error", error);
     const chatId = error.ctx.chat?.id;
-    if (chatId) await error.ctx.api.sendMessage(chatId, `⚠️ ${errorText(error.error)}`).catch(() => undefined);
+    if (chatId)
+      await error.ctx.api.sendMessage(chatId, `⚠️ ${errorText(error.error)}`).catch(() => undefined);
   });
 
   return bot;

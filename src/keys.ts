@@ -18,7 +18,10 @@ export function toBase64Url(bytes: Uint8Array): string {
 }
 
 export function fromBase64Url(value: string): Uint8Array {
-  const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const padded = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
@@ -26,7 +29,9 @@ export function fromBase64Url(value: string): Uint8Array {
 }
 
 export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
-  const keyPair = (await crypto.subtle.generateKey({ name: "X25519" }, true, ["deriveBits"])) as CryptoKeyPair;
+  const keyPair = (await crypto.subtle.generateKey({ name: "X25519" }, true, [
+    "deriveBits",
+  ])) as CryptoKeyPair;
 
   const rawPublic = new Uint8Array(
     (await crypto.subtle.exportKey("raw", keyPair.publicKey)) as ArrayBuffer,
@@ -34,10 +39,14 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
 
   let rawPrivate: Uint8Array;
   try {
-    rawPrivate = new Uint8Array((await crypto.subtle.exportKey("raw", keyPair.privateKey)) as ArrayBuffer);
+    rawPrivate = new Uint8Array(
+      (await crypto.subtle.exportKey("raw", keyPair.privateKey)) as ArrayBuffer,
+    );
   } catch {
     // Some runtimes only allow PKCS#8 export; the trailing 32 bytes are the seed.
-    const pkcs8 = new Uint8Array((await crypto.subtle.exportKey("pkcs8", keyPair.privateKey)) as ArrayBuffer);
+    const pkcs8 = new Uint8Array(
+      (await crypto.subtle.exportKey("pkcs8", keyPair.privateKey)) as ArrayBuffer,
+    );
     rawPrivate = pkcs8.slice(-32);
   }
 

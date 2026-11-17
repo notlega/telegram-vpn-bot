@@ -50,7 +50,11 @@ async function deflate(data: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-export async function encodeGrayscalePng(pixels: Uint8Array, width: number, height: number): Promise<Uint8Array> {
+export async function encodeGrayscalePng(
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): Promise<Uint8Array> {
   if (pixels.length !== width * height) {
     throw new Error(`pixel buffer mismatch: ${pixels.length} != ${width}x${height}`);
   }
@@ -71,5 +75,10 @@ export async function encodeGrayscalePng(pixels: Uint8Array, width: number, heig
   ihdr[11] = 0; // filter
   ihdr[12] = 0; // interlace
 
-  return concat([SIGNATURE, chunk("IHDR", ihdr), chunk("IDAT", await deflate(raw)), chunk("IEND", new Uint8Array(0))]);
+  return concat([
+    SIGNATURE,
+    chunk("IHDR", ihdr),
+    chunk("IDAT", await deflate(raw)),
+    chunk("IEND", new Uint8Array(0)),
+  ]);
 }

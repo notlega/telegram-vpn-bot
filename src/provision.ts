@@ -2,12 +2,23 @@ import type { Env, InstanceRecord, Region } from "./env";
 import { generateRealityKeyPair, generateShortId, generateUuid, randomHex } from "./keys";
 import { saveInstance } from "./kv";
 import { buildUserData, encodeUserData } from "./startup";
-import { createInstance, listOs, listPlans, pickOs, pickPlan, VultrError } from "./vultr";
+import {
+  createInstance,
+  listOs,
+  listPlans,
+  pickOs,
+  pickPlan,
+  VultrError,
+  type VultrInstance,
+} from "./vultr";
 
 export function parseRegions(env: Env): Region[] {
   return env.REGIONS.split(",")
     .map((entry) => entry.split(":"))
-    .filter((parts): parts is [string, string] => parts.length === 2 && Boolean(parts[0]) && Boolean(parts[1]))
+    .filter(
+      (parts): parts is [string, string] =>
+        parts.length === 2 && Boolean(parts[0]) && Boolean(parts[1]),
+    )
     .map(([id, label]) => ({ id: id.trim(), label: label.trim() }));
 }
 
@@ -22,7 +33,10 @@ export async function provisionServer(
   messageId: number,
   region: Region,
 ): Promise<InstanceRecord> {
-  const [osList, planList] = await Promise.all([listOs(env.VULTR_API_TOKEN), listPlans(env.VULTR_API_TOKEN)]);
+  const [osList, planList] = await Promise.all([
+    listOs(env.VULTR_API_TOKEN),
+    listPlans(env.VULTR_API_TOKEN),
+  ]);
 
   const os = pickOs(osList, env.OS_NAME);
   if (!os) throw new Error(`no OS matching "${env.OS_NAME}" (x64) on Vultr`);
@@ -44,7 +58,7 @@ export async function provisionServer(
     secret,
   });
 
-  let instance;
+  let instance: VultrInstance;
   try {
     instance = await createInstance(env.VULTR_API_TOKEN, {
       region: region.id,
@@ -57,7 +71,9 @@ export async function provisionServer(
     });
   } catch (error) {
     if (error instanceof VultrError && error.status === 403) {
-      throw new Error("Vultr refused the request (403) — check the API token permissions and account limits");
+      throw new Error(
+        "Vultr refused the request (403) — check the API token permissions and account limits",
+      );
     }
     throw error;
   }

@@ -69,7 +69,10 @@ async function request<T>(token: string, path: string, init: RequestInit = {}): 
   return (body ? JSON.parse(body) : undefined) as T;
 }
 
-export function createInstance(token: string, payload: CreateInstanceRequest): Promise<VultrInstance> {
+export function createInstance(
+  token: string,
+  payload: CreateInstanceRequest,
+): Promise<VultrInstance> {
   return request<{ instance: VultrInstance }>(token, "/instances", {
     method: "POST",
     body: JSON.stringify(payload),
