@@ -2,6 +2,7 @@ import type { InstanceRecord } from "./env";
 
 /** KV key prefix for instance records */
 const INSTANCE_PREFIX = "inst:";
+
 /** KV key prefix for the callback-token index */
 const SECRET_PREFIX = "secret:";
 

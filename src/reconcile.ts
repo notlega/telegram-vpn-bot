@@ -7,6 +7,7 @@ import { getInstance } from "./vultr";
 
 /** publish without waiting for the callback once an instance has run this long */
 const READY_FALLBACK_MS = 8 * 60_000;
+
 /** mark provisioning failed when nothing arrives within this window */
 const TIMEOUT_MS = 15 * 60_000;
 
