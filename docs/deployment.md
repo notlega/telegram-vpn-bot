@@ -23,7 +23,7 @@ wrangler. Pinning it per checkout is what Cloudflare recommends.
 git clone git@github.com:notlega/telegram-vpn-bot.git
 cd telegram-vpn-bot
 bun install
-bunx wrangler --version       # 4.x from node_modules
+bunx wrangler --version
 bunx wrangler login
 ```
 
@@ -132,8 +132,7 @@ Secret rotation: edit `.env`, then `bun run secrets` again. Re-run
 ## Removing the deployment
 
 ```sh
-bun run set-webhook -- --delete   # or:
-curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"
+bun run set-webhook -- --delete
 bunx wrangler delete
 bunx wrangler kv namespace delete --namespace-id <id>
 ```

@@ -138,11 +138,20 @@ user-data; Vultr's Alpine images do not ship it.
 
 ## Development
 
+`bun run dev` starts the local worker with local KV. `bun run check` runs the
+typecheck and biome, `bun run lint` runs biome alone, `bun run format` rewrites
+formatting.
+
 ```sh
-bun run dev     # wrangler dev, local worker + local KV
-bun run check   # typecheck + biome
-bun run lint    # biome check
-bun run format  # biome format --write
+bun run dev
+bun run check
+bun run lint
+bun run format
+```
+
+Health check once the worker is up:
+
+```sh
 curl http://127.0.0.1:8787/
 ```
 

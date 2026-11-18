@@ -28,17 +28,34 @@ is a bearer credential, so treat it as a secret.
 
 ## Quick start
 
+Install dependencies and log in. Wrangler is pinned as a project devDependency.
+
 ```sh
-bun install                                    # installs project-local wrangler
+bun install
 bunx wrangler login
-bunx wrangler kv namespace create KV           # paste id into wrangler.toml
-cp .env.example .env                           # fill in 4 values
-bun run secrets                                # push them to Cloudflare
+```
+
+Create the KV namespace, then paste the printed id into `wrangler.toml`.
+
+```sh
+bunx wrangler kv namespace create KV
+```
+
+Copy the env example, fill in the four values, and push them to Cloudflare.
+
+```sh
+cp .env.example .env
+bun run secrets
+```
+
+Deploy, then register the webhook with the printed `<workers-url>`.
+
+```sh
 bun run deploy
 bun run set-webhook -- <workers-url>
 ```
 
-Then open the bot and send `/up`.
+Open the bot and send `/up`.
 
 Full walkthrough: [Deployment](deployment)
 

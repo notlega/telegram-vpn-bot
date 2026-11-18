@@ -60,10 +60,9 @@ promptly, and use `/status` as the inventory.
 ## Inspecting a provisioned server
 
 The bot installs no SSH key, so use the Vultr console (or add a key later if you
-want shell access):
+want shell access). Run these on the provisioned server:
 
 ```sh
-# on the box
 systemctl status xray
 journalctl -u xray -n 50 --no-pager
 cat /var/log/vpn-setup.log

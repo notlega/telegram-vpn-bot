@@ -18,10 +18,13 @@ project devDependency, `bun install` pins it.
 all checks are manual. there is no ci workflow, so run them yourself before
 pushing.
 
+`bun run check` runs the typecheck and biome, `bun run lint` runs biome alone,
+`bun run format` rewrites formatting.
+
 ```sh
-bun run check     # typecheck + biome
-bun run lint      # biome check only
-bun run format    # biome format --write
+bun run check
+bun run lint
+bun run format
 ```
 
 a change that touches the worker should also pass a bundle check:
