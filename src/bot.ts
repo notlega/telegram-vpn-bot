@@ -96,7 +96,10 @@ export function createBot(env: Env, publicUrl: string): Bot {
       const keyboard = new InlineKeyboard();
 
       parseRegions(env).forEach((region, index) => {
-        if (index > 0 && index % 2 === 0) keyboard.row();
+        if (index > 0 && index % 2 === 0) {
+          keyboard.row();
+        }
+
         keyboard.text(region.label, `up:${region.id}`);
       });
 

@@ -128,6 +128,7 @@ export async function reconcile(env: Env): Promise<void> {
     const age = Date.now() - record.createdAt;
 
     let instance = null;
+
     try {
       instance = await getInstance(env.VULTR_API_TOKEN, record.id);
     } catch (error) {

@@ -93,6 +93,7 @@ export async function provisionServer(
   });
 
   let instance: VultrInstance;
+
   try {
     instance = await createInstance(env.VULTR_API_TOKEN, {
       region: region.id,

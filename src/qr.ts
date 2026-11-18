@@ -27,6 +27,7 @@ export async function qrPng(text: string, scale = 8, quietZone = 4): Promise<Uin
 
       const startX = (col + quietZone) * scale;
       const startY = (row + quietZone) * scale;
+
       for (let y = 0; y < scale; y += 1) {
         pixels.fill(0, (startY + y) * size + startX, (startY + y) * size + startX + scale);
       }

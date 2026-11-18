@@ -12,9 +12,14 @@ const SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
 /** precomputed CRC-32 lookup table used by the PNG chunk trailer */
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
+
   for (let n = 0; n < 256; n += 1) {
     let c = n;
-    for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+
+    for (let k = 0; k < 8; k += 1) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+
     table[n] = c >>> 0;
   }
 
@@ -29,7 +34,11 @@ const CRC_TABLE = (() => {
  */
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
-  for (const byte of bytes) crc = (CRC_TABLE[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8);
+
+  for (const byte of bytes) {
+    crc = (CRC_TABLE[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8);
+  }
+
   return (crc ^ 0xffffffff) >>> 0;
 }
 
@@ -43,6 +52,7 @@ function concat(parts: Uint8Array[]): Uint8Array {
   const total = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(total);
   let offset = 0;
+
   for (const part of parts) {
     out.set(part, offset);
     offset += part.length;
@@ -100,6 +110,7 @@ export async function encodeGrayscalePng(
   }
 
   const raw = new Uint8Array(height * (width + 1));
+
   for (let y = 0; y < height; y += 1) {
     raw[y * (width + 1)] = 0; // filter type: none
     raw.set(pixels.subarray(y * width, (y + 1) * width), y * (width + 1) + 1);

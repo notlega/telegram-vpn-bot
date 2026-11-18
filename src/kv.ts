@@ -94,10 +94,13 @@ export async function listInstanceRecords(kv: KVNamespace): Promise<InstanceReco
 
   do {
     const page = await kv.list<InstanceRecord>({ prefix: INSTANCE_PREFIX, cursor });
+
     for (const key of page.keys) {
       const record = await getInstance(kv, key.name.slice(INSTANCE_PREFIX.length));
 
-      if (record) records.push(record);
+      if (record) {
+        records.push(record);
+      }
     }
 
     cursor = page.list_complete ? undefined : page.cursor;
