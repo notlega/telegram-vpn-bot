@@ -5,18 +5,18 @@ import { failedMessage, readyMessage, recordLink } from "./messages";
 import { qrPng } from "./qr";
 import { getInstance } from "./vultr";
 
-/** Publish without waiting for the callback once an instance has run this long. */
+/** Publish without waiting for the callback once an instance has run this long */
 const READY_FALLBACK_MS = 8 * 60_000;
-/** Mark provisioning failed when nothing arrives within this window. */
+/** Mark provisioning failed when nothing arrives within this window */
 const TIMEOUT_MS = 15 * 60_000;
 
 /**
  * edits the original status message, falling back to a new message when the
- * edit fails (for example after the message was deleted).
+ * edit fails (for example after the message was deleted)
  *
- * @param api — grammY API client.
- * @param record — record holding `chatId` and `messageId`.
- * @param text — new message body.
+ * @param api — grammY API client
+ * @param record — record holding `chatId` and `messageId`
+ * @param text — new message body
  */
 async function replaceOrSend(api: Api, record: InstanceRecord, text: string): Promise<void> {
   try {
@@ -30,11 +30,11 @@ async function replaceOrSend(api: Api, record: InstanceRecord, text: string): Pr
 }
 
 /**
- * announces a ready server: edits the status message, then sends the QR code.
+ * announces a ready server: edits the status message, then sends the QR code
  *
- * @param env — worker bindings.
- * @param record — record with a resolved IP and credentials.
- * @param note — optional warning shown above the link.
+ * @param env — worker bindings
+ * @param record — record with a resolved IP and credentials
+ * @param note — optional warning shown above the link
  */
 export async function publishReady(env: Env, record: InstanceRecord, note?: string): Promise<void> {
   const bot = new Bot(env.BOT_TOKEN);
@@ -51,26 +51,33 @@ export async function publishReady(env: Env, record: InstanceRecord, note?: stri
 }
 
 /**
- * handles the cloud-init completion callback `GET /ready?token=…&ip=…`.
+ * handles the cloud-init completion callback `GET /ready?token=…&ip=…`
  *
  * Resolves the record through the token index, stores the reported IP, flips
  * the state to `ready` and publishes the link. Idempotent: repeated callbacks
- * return `already ready`.
+ * return `already ready`
  *
- * @param env — worker bindings.
- * @param request — incoming callback request.
- * @returns HTTP 200 `ok`, 400 for a missing token, 404 for an unknown token.
+ * @param env — worker bindings
+ * @param request — incoming callback request
+ * @returns HTTP 200 `ok`, 400 for a missing token, 404 for an unknown token
  */
 export async function handleReady(env: Env, request: Request): Promise<Response> {
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
   const ip = url.searchParams.get("ip") ?? "";
 
-  if (!token) return new Response("missing token", { status: 400 });
+  if (!token) {
+    return new Response("missing token", { status: 400 });
+  }
 
   const record = await getInstanceBySecret(env.KV, token);
-  if (!record) return new Response("unknown token", { status: 404 });
-  if (record.state === "ready") return new Response("already ready");
+
+  if (!record) {
+    return new Response("unknown token", { status: 404 });
+  }
+  if (record.state === "ready") {
+    return new Response("already ready");
+  }
 
   const updated: InstanceRecord = {
     ...record,
@@ -80,16 +87,18 @@ export async function handleReady(env: Env, request: Request): Promise<Response>
   };
 
   await saveInstance(env.KV, updated);
+
   await publishReady(env, updated).catch((error) => console.error("publishReady failed", error));
+
   return new Response("ok");
 }
 
 /**
- * marks a record as failed and reports the reason in chat.
+ * marks a record as failed and reports the reason in chat
  *
- * @param env — worker bindings.
- * @param record — record being abandoned.
- * @param reason — short explanation for the operator.
+ * @param env — worker bindings
+ * @param record — record being abandoned
+ * @param reason — short explanation for the operator
  */
 async function markFailed(env: Env, record: InstanceRecord, reason: string): Promise<void> {
   const updated: InstanceRecord = { ...record, state: "failed", error: reason };
@@ -98,18 +107,21 @@ async function markFailed(env: Env, record: InstanceRecord, reason: string): Pro
 }
 
 /**
- * cron entry point: advances every record still in `provisioning`.
+ * cron entry point: advances every record still in `provisioning`
  *
  * Publishes records whose instance is running past the fallback window, fails
  * records whose instance disappeared, and times out records older than 15
- * minutes. Does nothing when no record is provisioning.
+ * minutes. Does nothing when no record is provisioning
  *
- * @param env — worker bindings.
+ * @param env — worker bindings
  */
 export async function reconcile(env: Env): Promise<void> {
   const records = await listInstanceRecords(env.KV);
   const pending = records.filter((record) => record.state === "provisioning");
-  if (pending.length === 0) return;
+
+  if (pending.length === 0) {
+    return;
+  }
 
   for (const record of pending) {
     const age = Date.now() - record.createdAt;

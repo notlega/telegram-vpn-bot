@@ -50,9 +50,9 @@ if (!token) {
 const api = (method: string): string => `https://api.telegram.org/bot${token}/${method}`;
 
 /**
- * calls one Telegram Bot API method and exits on failure.
+ * calls one Telegram Bot API method and exits on failure
  *
- * @param request — discriminated request describing the method and its payload.
+ * @param request — discriminated request describing the method and its payload
  */
 async function call(request: WebhookRequest): Promise<void> {
   const response = await fetch(api(request.method), {
@@ -70,10 +70,10 @@ async function call(request: WebhookRequest): Promise<void> {
 }
 
 /**
- * validates a worker origin and appends the webhook path.
+ * validates a worker origin and appends the webhook path
  *
- * @param value — base URL, must use https.
- * @returns the final webhook endpoint.
+ * @param value — base URL, must use https
+ * @returns the final webhook endpoint
  */
 function buildEndpoint(value: string): string {
   let url: URL;

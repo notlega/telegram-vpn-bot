@@ -13,10 +13,10 @@ import {
 } from "./vultr";
 
 /**
- * parses the `REGIONS` configuration string into region options.
+ * parses the `REGIONS` configuration string into region options
  *
- * @param env — worker bindings; only `REGIONS` is read.
- * @returns regions in menu order; malformed entries are dropped.
+ * @param env — worker bindings; only `REGIONS` is read
+ * @returns regions in menu order; malformed entries are dropped
  */
 export function parseRegions(env: Env): Region[] {
   return env.REGIONS.split(",")
@@ -29,30 +29,30 @@ export function parseRegions(env: Env): Region[] {
 }
 
 /**
- * finds a region by id.
+ * finds a region by id
  *
- * @param env — worker bindings.
- * @param id — Vultr region id such as `icn`.
- * @returns the region, or `undefined` when not configured.
+ * @param env — worker bindings
+ * @param id — Vultr region id such as `icn`
+ * @returns the region, or `undefined` when not configured
  */
 export function findRegion(env: Env, id: string): Region | undefined {
   return parseRegions(env).find((region) => region.id === id);
 }
 
 /**
- * creates a Vultr instance and registers it for reconciliation.
+ * creates a Vultr instance and registers it for reconciliation
  *
  * Generates a fresh key pair, UUID and short id, resolves the OS image and plan
- * from the live Vultr catalogs, then submits the bootstrap script as user-data.
+ * from the live Vultr catalogs, then submits the bootstrap script as user-data
  *
- * @param env — worker bindings.
- * @param publicUrl — origin of the deployed worker, used to build the callback.
- * @param chatId — chat that should receive the status updates.
- * @param messageId — status message the bot edits when the server is ready.
- * @param region — region selected by the operator.
- * @returns the newly stored instance record.
+ * @param env — worker bindings
+ * @param publicUrl — origin of the deployed worker, used to build the callback
+ * @param chatId — chat that should receive the status updates
+ * @param messageId — status message the bot edits when the server is ready
+ * @param region — region selected by the operator
+ * @returns the newly stored instance record
  * @throws {Error} when the OS family or plan cannot be resolved, or Vultr
- *   refuses the request.
+ *   refuses the request
  */
 export async function provisionServer(
   env: Env,
@@ -67,10 +67,16 @@ export async function provisionServer(
   ]);
 
   const os = pickOs(osList, env.OS_NAME);
-  if (!os) throw new Error(`no OS matching "${env.OS_NAME}" (x64) on Vultr`);
+
+  if (!os) {
+    throw new Error(`no OS matching "${env.OS_NAME}" (x64) on Vultr`);
+  }
 
   const plan = pickPlan(planList, env.PLAN);
-  if (!plan) throw new Error(`plan "${env.PLAN}" not found on Vultr`);
+
+  if (!plan) {
+    throw new Error(`plan "${env.PLAN}" not found on Vultr`);
+  }
 
   const keys = await generateRealityKeyPair();
   const uuid = generateUuid();
@@ -128,10 +134,10 @@ export async function provisionServer(
 }
 
 /**
- * renders the intermediate "creating server" chat message.
+ * renders the intermediate "creating server" chat message
  *
- * @param record — record stored right after the instance was created.
- * @returns plain-text message body.
+ * @param record — record stored right after the instance was created
+ * @returns plain-text message body
  */
 export function describeProvisioning(record: InstanceRecord): string {
   return [

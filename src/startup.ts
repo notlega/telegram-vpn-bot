@@ -1,33 +1,33 @@
 /**
- * provisions a fresh Vultr instance entirely from user-data (cloud-init).
+ * provisions a fresh Vultr instance entirely from user-data (cloud-init)
  *
  * Vultr Alpine images ship without cloud-init, so the bot targets Debian by
  * default (configurable via OS_NAME). The script installs Xray, wires a
- * systemd unit, turns on BBR and then calls back to the worker.
+ * systemd unit, turns on BBR and then calls back to the worker
  */
 
-/** Credentials and callback details baked into one instance's bootstrap. */
+/** Credentials and callback details baked into one instance's bootstrap */
 export interface ProvisionParams {
-  /** VLESS user id written into the Xray config. */
+  /** VLESS user id written into the Xray config */
   uuid: string;
-  /** REALITY X25519 private key in base64url. */
+  /** REALITY X25519 private key in base64url */
   privateKey: string;
-  /** REALITY short id in hex. */
+  /** REALITY short id in hex */
   shortId: string;
-  /** REALITY camouflage host; also used as the REALITY `dest`. */
+  /** REALITY camouflage host; also used as the REALITY `dest` */
   sni: string;
-  /** Absolute worker URL the script calls when Xray is up, usually `<public>/ready`. */
+  /** Absolute worker URL the script calls when Xray is up, usually `<public>/ready` */
   callbackUrl: string;
-  /** One-time token appended to the callback URL. */
+  /** One-time token appended to the callback URL */
   secret: string;
 }
 
 /**
  * builds the Xray server config: one VLESS + REALITY inbound on `:443` with
- * XTLS Vision, direct outbound, private ranges blocked.
+ * XTLS Vision, direct outbound, private ranges blocked
  *
- * @param params — credentials for this instance.
- * @returns pretty-printed JSON ready to write to `config.json`.
+ * @param params — credentials for this instance
+ * @returns pretty-printed JSON ready to write to `config.json`
  */
 export function buildServerConfig(params: ProvisionParams): string {
   return JSON.stringify(
@@ -70,14 +70,14 @@ export function buildServerConfig(params: ProvisionParams): string {
 }
 
 /**
- * builds the cloud-init shell script that prepares a fresh Debian box.
+ * builds the cloud-init shell script that prepares a fresh Debian box
  *
  * The script installs curl and unzip, downloads the latest Xray release,
  * writes the config and a systemd unit, enables BBR, then calls the worker back
- * up to six times so provisioning can finish without SSH.
+ * up to six times so provisioning can finish without SSH
  *
- * @param params — credentials and callback details.
- * @returns a POSIX shell script suitable for Vultr `user_data`.
+ * @param params — credentials and callback details
+ * @returns a POSIX shell script suitable for Vultr `user_data`
  * @example
  * const script = buildUserData({ uuid, privateKey, shortId, sni, callbackUrl, secret });
  */
@@ -141,10 +141,10 @@ done
 }
 
 /**
- * base64 encodes a bootstrap script the way Vultr's `user_data` field expects.
+ * base64 encodes a bootstrap script the way Vultr's `user_data` field expects
  *
- * @param script — plain shell script.
- * @returns base64 representation.
+ * @param script — plain shell script
+ * @returns base64 representation
  */
 export function encodeUserData(script: string): string {
   return btoa(script);

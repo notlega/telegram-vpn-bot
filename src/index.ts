@@ -4,10 +4,10 @@ import type { Env } from "./env";
 import { handleReady, reconcile } from "./reconcile";
 
 /**
- * worker entry point.
+ * worker entry point
  *
  * Routes: `/telegram` (webhook), `/ready` (cloud-init callback) and `/`
- * (health check). The scheduled handler reconciles provisioning records.
+ * (health check). The scheduled handler reconciles provisioning records
  */
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

@@ -1,15 +1,15 @@
 /**
- * minimal PNG encoder for 8-bit grayscale images.
+ * minimal PNG encoder for 8-bit grayscale images
  *
  * Workers have no canvas, so QR codes are rasterised by hand and compressed
  * with the platform CompressionStream (zlib "deflate" flavour, which is what
- * PNG expects).
+ * PNG expects)
  */
 
-/** PNG magic bytes that open every file. */
+/** PNG magic bytes that open every file */
 const SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-/** Precomputed CRC-32 lookup table used by the PNG chunk trailer. */
+/** Precomputed CRC-32 lookup table used by the PNG chunk trailer */
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let n = 0; n < 256; n += 1) {
@@ -21,10 +21,10 @@ const CRC_TABLE = (() => {
 })();
 
 /**
- * computes the CRC-32 checksum PNG requires for every chunk.
+ * computes the CRC-32 checksum PNG requires for every chunk
  *
- * @param bytes — chunk type plus data.
- * @returns unsigned 32-bit checksum.
+ * @param bytes — chunk type plus data
+ * @returns unsigned 32-bit checksum
  */
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
@@ -33,10 +33,10 @@ function crc32(bytes: Uint8Array): number {
 }
 
 /**
- * joins byte arrays into one contiguous buffer.
+ * joins byte arrays into one contiguous buffer
  *
- * @param parts — buffers in output order.
- * @returns a new buffer containing all parts.
+ * @param parts — buffers in output order
+ * @returns a new buffer containing all parts
  */
 function concat(parts: Uint8Array[]): Uint8Array {
   const total = parts.reduce((sum, part) => sum + part.length, 0);
@@ -50,11 +50,11 @@ function concat(parts: Uint8Array[]): Uint8Array {
 }
 
 /**
- * wraps data in a PNG chunk: length, type, payload, CRC.
+ * wraps data in a PNG chunk: length, type, payload, CRC
  *
- * @param type — four character chunk type such as `IHDR`.
- * @param data — chunk payload.
- * @returns the encoded chunk.
+ * @param type — four character chunk type such as `IHDR`
+ * @param data — chunk payload
+ * @returns the encoded chunk
  */
 function chunk(type: string, data: Uint8Array): Uint8Array {
   const out = new Uint8Array(12 + data.length);
@@ -68,10 +68,10 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 
 /**
  * compresses bytes with zlib-wrapped deflate, the encoding PNG's IDAT chunk
- * expects.
+ * expects
  *
- * @param data — raw scanline buffer.
- * @returns compressed bytes.
+ * @param data — raw scanline buffer
+ * @returns compressed bytes
  */
 async function deflate(data: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("deflate"));
@@ -79,14 +79,14 @@ async function deflate(data: Uint8Array): Promise<Uint8Array> {
 }
 
 /**
- * encodes 8-bit grayscale pixels as a PNG file.
+ * encodes 8-bit grayscale pixels as a PNG file
  *
  * @param pixels — row-major grayscale samples, one byte per pixel (0 black,
- *   255 white). Length must equal `width * height`.
- * @param width — image width in pixels.
- * @param height — image height in pixels.
- * @returns the complete PNG file as bytes.
- * @throws {Error} when the pixel buffer length does not match the dimensions.
+ *   255 white). Length must equal `width * height`
+ * @param width — image width in pixels
+ * @param height — image height in pixels
+ * @returns the complete PNG file as bytes
+ * @throws {Error} when the pixel buffer length does not match the dimensions
  */
 export async function encodeGrayscalePng(
   pixels: Uint8Array,

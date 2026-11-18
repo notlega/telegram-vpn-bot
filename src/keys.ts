@@ -1,24 +1,24 @@
 /**
- * per-instance credential generation.
+ * per-instance credential generation
  *
  * Xray speaks base64url (raw, unpadded) for REALITY x25519 keys and hex for
  * short ids. Everything is derived from WebCrypto so nothing has to be stored
- * between requests.
+ * between requests
  */
 
-/** A REALITY key pair, both halves encoded the way Xray expects them. */
+/** A REALITY key pair, both halves encoded the way Xray expects them */
 export interface RealityKeyPair {
-  /** 32 raw bytes, base64url encoded. Written to the server config. */
+  /** 32 raw bytes, base64url encoded. Written to the server config */
   privateKey: string;
-  /** 32 raw bytes, base64url encoded. Published in the share link as `pbk`. */
+  /** 32 raw bytes, base64url encoded. Published in the share link as `pbk` */
   publicKey: string;
 }
 
 /**
- * encodes bytes as unpadded base64url, the format Xray uses for REALITY keys.
+ * encodes bytes as unpadded base64url, the format Xray uses for REALITY keys
  *
- * @param bytes — raw key material.
- * @returns base64url string without `=` padding.
+ * @param bytes — raw key material
+ * @returns base64url string without `=` padding
  */
 export function toBase64Url(bytes: Uint8Array): string {
   let binary = "";
@@ -27,10 +27,10 @@ export function toBase64Url(bytes: Uint8Array): string {
 }
 
 /**
- * decodes an unpadded base64url string produced by {@link toBase64Url}.
+ * decodes an unpadded base64url string produced by {@link toBase64Url}
  *
- * @param value — base64url string, padding optional.
- * @returns the decoded bytes.
+ * @param value — base64url string, padding optional
+ * @returns the decoded bytes
  */
 export function fromBase64Url(value: string): Uint8Array {
   const padded = value
@@ -44,12 +44,12 @@ export function fromBase64Url(value: string): Uint8Array {
 }
 
 /**
- * generates a fresh X25519 key pair for one server.
+ * generates a fresh X25519 key pair for one server
  *
  * The private half is exported raw when the runtime allows it and falls back to
- * the trailing 32 bytes of the PKCS#8 encoding otherwise.
+ * the trailing 32 bytes of the PKCS#8 encoding otherwise
  *
- * @returns the pair in Xray's base64url format.
+ * @returns the pair in Xray's base64url format
  */
 export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
   const keyPair = (await crypto.subtle.generateKey({ name: "X25519" }, true, [
@@ -81,30 +81,30 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
 }
 
 /**
- * generates a REALITY short id.
+ * generates a REALITY short id
  *
  * @param byteLength — number of random bytes; Xray accepts up to 8 bytes
- *   (16 hex characters). Defaults to 4.
- * @returns lowercase hex string, `byteLength * 2` characters long.
+ *   (16 hex characters). Defaults to 4
+ * @returns lowercase hex string, `byteLength * 2` characters long
  */
 export function generateShortId(byteLength = 4): string {
   return randomHex(byteLength);
 }
 
 /**
- * generates a random UUID v4 for use as the VLESS user id.
+ * generates a random UUID v4 for use as the VLESS user id
  *
- * @returns canonical UUID string.
+ * @returns canonical UUID string
  */
 export function generateUuid(): string {
   return crypto.randomUUID();
 }
 
 /**
- * generates cryptographically random bytes as lowercase hex.
+ * generates cryptographically random bytes as lowercase hex
  *
- * @param byteLength — number of random bytes.
- * @returns hex string, `byteLength * 2` characters long.
+ * @param byteLength — number of random bytes
+ * @returns hex string, `byteLength * 2` characters long
  */
 export function randomHex(byteLength: number): string {
   const bytes = crypto.getRandomValues(new Uint8Array(byteLength));

@@ -28,13 +28,13 @@ function errorText(error: unknown): string {
 
 /**
  * posts a placeholder, provisions the server, then replaces the placeholder
- * with either the progress description or the failure reason.
+ * with either the progress description or the failure reason
  *
- * @param api — grammY API client.
- * @param env — worker bindings.
- * @param publicUrl — worker origin used for the completion callback.
- * @param chatId — chat that receives progress updates.
- * @param region — region to deploy in.
+ * @param api — grammY API client
+ * @param env — worker bindings
+ * @param publicUrl — worker origin used for the completion callback
+ * @param chatId — chat that receives progress updates
+ * @param region — region to deploy in
  */
 async function startProvision(
   api: Api,
@@ -58,11 +58,11 @@ async function startProvision(
 
 /**
  * builds the bot: allowlist middleware, command handlers, callback handlers and
- * the error boundary. Stateless — one instance is created per webhook request.
+ * the error boundary. Stateless — one instance is created per webhook request
  *
- * @param env — worker bindings.
- * @param publicUrl — worker origin used when provisioning new servers.
- * @returns a grammY bot ready to receive updates.
+ * @param env — worker bindings
+ * @param publicUrl — worker origin used when provisioning new servers
+ * @returns a grammY bot ready to receive updates
  */
 export function createBot(env: Env, publicUrl: string): Bot {
   const bot = new Bot(env.BOT_TOKEN);

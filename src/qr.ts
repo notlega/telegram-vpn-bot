@@ -2,13 +2,13 @@ import qrcode from "qrcode-generator";
 import { encodeGrayscalePng } from "./png";
 
 /**
- * rasterises text into a QR code PNG without a canvas.
+ * rasterises text into a QR code PNG without a canvas
  *
- * @param text — payload to encode, usually a share link.
- * @param scale — pixels per QR module. Defaults to 8.
+ * @param text — payload to encode, usually a share link
+ * @param scale — pixels per QR module. Defaults to 8
  * @param quietZone — blank modules added on every side; the QR spec requires
- *   at least 4. Defaults to 4.
- * @returns the QR code as grayscale PNG bytes.
+ *   at least 4. Defaults to 4
+ * @returns the QR code as grayscale PNG bytes
  */
 export async function qrPng(text: string, scale = 8, quietZone = 4): Promise<Uint8Array> {
   const qr = qrcode(0, "M");
@@ -21,7 +21,9 @@ export async function qrPng(text: string, scale = 8, quietZone = 4): Promise<Uin
 
   for (let row = 0; row < modules; row += 1) {
     for (let col = 0; col < modules; col += 1) {
-      if (!qr.isDark(row, col)) continue;
+      if (!qr.isDark(row, col)) {
+        continue;
+      }
       const startX = (col + quietZone) * scale;
       const startY = (row + quietZone) * scale;
       for (let y = 0; y < scale; y += 1) {

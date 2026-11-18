@@ -1,35 +1,35 @@
 /**
- * share-link construction for the provisioned servers.
+ * share-link construction for the provisioned servers
  */
 
-/** Inputs needed to build a client-importable VLESS + REALITY link. */
+/** Inputs needed to build a client-importable VLESS + REALITY link */
 export interface VlessParams {
-  /** Server address, IPv4 or hostname. */
+  /** Server address, IPv4 or hostname */
   host: string;
-  /** TCP port; defaults to 443. */
+  /** TCP port; defaults to 443 */
   port?: number;
-  /** VLESS user id (UUID). */
+  /** VLESS user id (UUID) */
   uuid: string;
-  /** REALITY public key in base64url, sent as `pbk`. */
+  /** REALITY public key in base64url, sent as `pbk` */
   publicKey: string;
-  /** REALITY short id in hex, sent as `sid`. */
+  /** REALITY short id in hex, sent as `sid` */
   shortId: string;
-  /** REALITY camouflage host, sent as `sni`. */
+  /** REALITY camouflage host, sent as `sni` */
   sni: string;
-  /** Display name shown by the client after import. */
+  /** Display name shown by the client after import */
   label: string;
-  /** XTLS flow control; defaults to `xtls-rprx-vision`. */
+  /** XTLS flow control; defaults to `xtls-rprx-vision` */
   flow?: string;
 }
 
 /**
- * builds a VLESS + REALITY share link importable by v2rayN and v2rayNG.
+ * builds a VLESS + REALITY share link importable by v2rayN and v2rayNG
  *
  * The link hard-codes the settings this bot provisions: TCP transport, REALITY
- * security, `chrome` fingerprint and XTLS Vision flow.
+ * security, `chrome` fingerprint and XTLS Vision flow
  *
- * @param params — server address and credentials.
- * @returns a `vless://` URL. Treat it as a bearer credential.
+ * @param params — server address and credentials
+ * @returns a `vless://` URL. Treat it as a bearer credential
  * @example
  * buildVlessLink({ host: "203.0.113.10", uuid, publicKey, shortId, sni, label });
  * // vless://<uuid>@203.0.113.10:443?type=tcp&security=reality&…#VPN-Seoul
