@@ -23,22 +23,31 @@ export class VultrError extends Error {
 export interface VultrInstance {
   /** Instance id (SUBID) */
   id: string;
+
   /** Region id, for example `icn` */
   region: string;
+
   /** Plan id, for example `vc2-1c-1g` */
   plan: string;
+
   /** OS image id the instance was created from */
   os_id: number;
+
   /** Primary IPv4 address, `0.0.0.0` until assigned */
   main_ip: string;
+
   /** Instance label */
   label: string;
+
   /** Vultr lifecycle status, for example `active` */
   status: string;
+
   /** Power state: `running` once the box is up */
   power_status: string;
+
   /** Vultr health opinion, for example `ok` */
   server_status: string;
+
   /** Creation timestamp as reported by Vultr */
   date_created: string;
 }
@@ -47,8 +56,10 @@ export interface VultrInstance {
 export interface VultrOs {
   /** Image id to pass as `os_id` when creating an instance */
   id: number;
+
   /** Display name, for example `Debian 13 x64` */
   name: string;
+
   /** Architecture, for example `x64` */
   arch: string;
 }
@@ -57,12 +68,16 @@ export interface VultrOs {
 export interface VultrPlan {
   /** Plan id, for example `vc2-1c-1g` */
   id: string;
+
   /** Virtual CPU count */
   vcpu_count: number;
+
   /** Memory in megabytes */
   ram: number;
+
   /** Base monthly price in USD */
   monthly_cost: number;
+
   /** Regions where the plan can be deployed */
   regions: string[];
 }
@@ -71,16 +86,22 @@ export interface VultrPlan {
 export interface CreateInstanceRequest {
   /** Region id */
   region: string;
+
   /** Plan id */
   plan: string;
+
   /** OS image id */
   os_id: number;
+
   /** Instance label shown in the Vultr console */
   label: string;
+
   /** Hostname assigned inside the guest */
   hostname?: string;
+
   /** Base64 encoded cloud-init script */
   user_data: string;
+
   /** Automatic backup toggle; the bot disables backups to keep the base price */
   backups?: "enabled" | "disabled";
 }

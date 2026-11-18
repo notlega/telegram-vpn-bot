@@ -6,18 +6,25 @@
 export interface VlessParams {
   /** Server address, IPv4 or hostname */
   host: string;
+
   /** TCP port; defaults to 443 */
   port?: number;
+
   /** VLESS user id (UUID) */
   uuid: string;
+
   /** REALITY public key in base64url, sent as `pbk` */
   publicKey: string;
+
   /** REALITY short id in hex, sent as `sid` */
   shortId: string;
+
   /** REALITY camouflage host, sent as `sni` */
   sni: string;
+
   /** Display name shown by the client after import */
   label: string;
+
   /** XTLS flow control; defaults to `xtls-rprx-vision` */
   flow?: string;
 }

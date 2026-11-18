@@ -10,14 +10,19 @@
 export interface ProvisionParams {
   /** VLESS user id written into the Xray config */
   uuid: string;
+
   /** REALITY X25519 private key in base64url */
   privateKey: string;
+
   /** REALITY short id in hex */
   shortId: string;
+
   /** REALITY camouflage host; also used as the REALITY `dest` */
   sni: string;
+
   /** Absolute worker URL the script calls when Xray is up, usually `<public>/ready` */
   callbackUrl: string;
+
   /** One-time token appended to the callback URL */
   secret: string;
 }

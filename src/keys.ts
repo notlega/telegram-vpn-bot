@@ -10,6 +10,7 @@
 export interface RealityKeyPair {
   /** 32 raw bytes, base64url encoded. Written to the server config */
   privateKey: string;
+
   /** 32 raw bytes, base64url encoded. Published in the share link as `pbk` */
   publicKey: string;
 }

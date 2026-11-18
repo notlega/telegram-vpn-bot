@@ -45,32 +45,46 @@ export interface InstanceRecord {
 
   /** Vultr region id the instance was created in, for example `icn` */
   region: string;
+
   /** Human readable region name used in chat messages */
   regionLabel: string;
+
   /** Public IPv4 address, or `pending` until the instance reports one */
   ip: string;
+
   /** Current lifecycle state */
   state: InstanceState;
+
   /** Telegram chat that owns the status message */
   chatId: number;
+
   /** Telegram message id the bot edits when the state changes */
   messageId: number;
+
   /** One-time token used by the provisioning script to report completion */
   secret: string;
+
   /** VLESS user id handed to Xray and embedded in the share link */
   uuid: string;
+
   /** X25519 public key in base64url; published in the share link as `pbk` */
   publicKey: string;
+
   /** X25519 private key in base64url; only ever written to the server config */
   privateKey: string;
+
   /** REALITY short id in hex */
   shortId: string;
+
   /** REALITY camouflage host active on this instance */
   sni: string;
+
   /** Creation timestamp in epoch milliseconds */
   createdAt: number;
+
   /** Timestamp in epoch milliseconds when the instance reported ready */
   readyAt?: number;
+
   /** Failure reason when `state` is `failed` */
   error?: string;
 }
@@ -79,6 +93,7 @@ export interface InstanceRecord {
 export interface Region {
   /** Vultr region id, for example `icn` */
   id: string;
+
   /** Display name shown on the inline keyboard */
   label: string;
 }
