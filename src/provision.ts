@@ -109,6 +109,7 @@ export async function provisionServer(
         "Vultr refused the request (403) — check the API token permissions and account limits",
       );
     }
+
     throw error;
   }
 

@@ -5,9 +5,9 @@ import { failedMessage, readyMessage, recordLink } from "./messages";
 import { qrPng } from "./qr";
 import { getInstance } from "./vultr";
 
-/** Publish without waiting for the callback once an instance has run this long */
+/** publish without waiting for the callback once an instance has run this long */
 const READY_FALLBACK_MS = 8 * 60_000;
-/** Mark provisioning failed when nothing arrives within this window */
+/** mark provisioning failed when nothing arrives within this window */
 const TIMEOUT_MS = 15 * 60_000;
 
 /**
@@ -75,6 +75,7 @@ export async function handleReady(env: Env, request: Request): Promise<Response>
   if (!record) {
     return new Response("unknown token", { status: 404 });
   }
+
   if (record.state === "ready") {
     return new Response("already ready");
   }

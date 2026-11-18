@@ -12,7 +12,7 @@ export interface Env {
   /** Vultr API v2 token with instance and IPv4 read/write access. Secret */
   VULTR_API_TOKEN: string;
 
-  /** Comma separated Telegram user ids allowed to control the bot. Secret */
+  /** comma separated Telegram user ids allowed to control the bot. Secret */
   ALLOWED_USER_ID: string;
 
   /** REALITY camouflage host. Its TLS handshake is what an unauthenticated peer sees */
@@ -27,11 +27,11 @@ export interface Env {
   /** OS family prefix resolved to the newest matching x64 image, for example `Debian` */
   OS_NAME: string;
 
-  /** When set, webhook requests must carry this `X-Telegram-Bot-Api-Secret-Token` */
+  /** when set, webhook requests must carry this `X-Telegram-Bot-Api-Secret-Token` */
   WEBHOOK_SECRET?: string;
 }
 
-/** Lifecycle state of a tracked server */
+/** lifecycle state of a tracked server */
 export type InstanceState = "provisioning" | "ready" | "failed";
 
 /**
@@ -46,13 +46,13 @@ export interface InstanceRecord {
   /** Vultr region id the instance was created in, for example `icn` */
   region: string;
 
-  /** Human readable region name used in chat messages */
+  /** human readable region name used in chat messages */
   regionLabel: string;
 
-  /** Public IPv4 address, or `pending` until the instance reports one */
+  /** public IPv4 address, or `pending` until the instance reports one */
   ip: string;
 
-  /** Current lifecycle state */
+  /** current lifecycle state */
   state: InstanceState;
 
   /** Telegram chat that owns the status message */
@@ -61,7 +61,7 @@ export interface InstanceRecord {
   /** Telegram message id the bot edits when the state changes */
   messageId: number;
 
-  /** One-time token used by the provisioning script to report completion */
+  /** one-time token used by the provisioning script to report completion */
   secret: string;
 
   /** VLESS user id handed to Xray and embedded in the share link */
@@ -79,13 +79,13 @@ export interface InstanceRecord {
   /** REALITY camouflage host active on this instance */
   sni: string;
 
-  /** Creation timestamp in epoch milliseconds */
+  /** creation timestamp in epoch milliseconds */
   createdAt: number;
 
-  /** Timestamp in epoch milliseconds when the instance reported ready */
+  /** timestamp in epoch milliseconds when the instance reported ready */
   readyAt?: number;
 
-  /** Failure reason when `state` is `failed` */
+  /** failure reason when `state` is `failed` */
   error?: string;
 }
 
@@ -94,6 +94,6 @@ export interface Region {
   /** Vultr region id, for example `icn` */
   id: string;
 
-  /** Display name shown on the inline keyboard */
+  /** display name shown on the inline keyboard */
   label: string;
 }

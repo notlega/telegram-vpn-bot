@@ -10,7 +10,9 @@
 
 interface SetWebhookPayload {
   url: string;
+
   allowed_updates: string[];
+
   secret_token?: string;
 }
 
@@ -20,6 +22,7 @@ type WebhookRequest =
 
 interface TelegramResponse {
   ok: boolean;
+
   description?: string;
 }
 

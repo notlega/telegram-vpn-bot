@@ -13,10 +13,13 @@ export function formatAge(createdAt: number): string {
   if (minutes < 60) {
     return `${minutes}m`;
   }
+
   const hours = Math.floor(minutes / 60);
+
   if (hours < 24) {
     return `${hours}h`;
   }
+
   return `${Math.floor(hours / 24)}d`;
 }
 
@@ -101,6 +104,7 @@ export function statusMessage(records: InstanceRecord[], live: Map<string, strin
   if (records.length === 0) {
     return "no servers tracked. use /up to create one";
   }
+
   const lines = records.map((record) => instanceLine(record, live.get(record.id)));
 
   return ["tracked servers:", ...lines, "", "/up — create, /down — destroy"].join("\n");

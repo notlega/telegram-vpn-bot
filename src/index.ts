@@ -20,11 +20,13 @@ export default {
     if (url.pathname === "/telegram") {
       if (env.WEBHOOK_SECRET) {
         const provided = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
+
         if (provided !== env.WEBHOOK_SECRET) {
           console.warn("webhook rejected: secret token mismatch");
           return new Response("forbidden", { status: 403 });
         }
       }
+
       return webhookCallback(createBot(env, url.origin), "cloudflare-mod")(request);
     }
 

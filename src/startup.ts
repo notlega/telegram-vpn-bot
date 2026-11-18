@@ -6,7 +6,7 @@
  * systemd unit, turns on BBR and then calls back to the worker
  */
 
-/** Credentials and callback details baked into one instance's bootstrap */
+/** credentials and callback details baked into one instance's bootstrap */
 export interface ProvisionParams {
   /** VLESS user id written into the Xray config */
   uuid: string;
@@ -20,10 +20,10 @@ export interface ProvisionParams {
   /** REALITY camouflage host; also used as the REALITY `dest` */
   sni: string;
 
-  /** Absolute worker URL the script calls when Xray is up, usually `<public>/ready` */
+  /** absolute worker URL the script calls when Xray is up, usually `<public>/ready` */
   callbackUrl: string;
 
-  /** One-time token appended to the callback URL */
+  /** one-time token appended to the callback URL */
   secret: string;
 }
 

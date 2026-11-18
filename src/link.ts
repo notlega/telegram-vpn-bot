@@ -2,9 +2,9 @@
  * share-link construction for the provisioned servers
  */
 
-/** Inputs needed to build a client-importable VLESS + REALITY link */
+/** inputs needed to build a client-importable VLESS + REALITY link */
 export interface VlessParams {
-  /** Server address, IPv4 or hostname */
+  /** server address, IPv4 or hostname */
   host: string;
 
   /** TCP port; defaults to 443 */
@@ -22,7 +22,7 @@ export interface VlessParams {
   /** REALITY camouflage host, sent as `sni` */
   sni: string;
 
-  /** Display name shown by the client after import */
+  /** display name shown by the client after import */
   label: string;
 
   /** XTLS flow control; defaults to `xtls-rprx-vision` */

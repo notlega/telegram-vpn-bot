@@ -4,7 +4,7 @@
 
 const API_BASE = "https://api.vultr.com/v2";
 
-/** Error raised for any non-successful Vultr API response */
+/** error raised for any non-successful Vultr API response */
 export class VultrError extends Error {
   /**
    * @param status — HTTP status code returned by Vultr
@@ -19,90 +19,90 @@ export class VultrError extends Error {
   }
 }
 
-/** Subset of the Vultr instance object the bot relies on */
+/** subset of the Vultr instance object the bot relies on */
 export interface VultrInstance {
-  /** Instance id (SUBID) */
+  /** instance id (SUBID) */
   id: string;
 
-  /** Region id, for example `icn` */
+  /** region id, for example `icn` */
   region: string;
 
-  /** Plan id, for example `vc2-1c-1g` */
+  /** plan id, for example `vc2-1c-1g` */
   plan: string;
 
   /** OS image id the instance was created from */
   os_id: number;
 
-  /** Primary IPv4 address, `0.0.0.0` until assigned */
+  /** primary IPv4 address, `0.0.0.0` until assigned */
   main_ip: string;
 
-  /** Instance label */
+  /** instance label */
   label: string;
 
   /** Vultr lifecycle status, for example `active` */
   status: string;
 
-  /** Power state: `running` once the box is up */
+  /** power state: `running` once the box is up */
   power_status: string;
 
   /** Vultr health opinion, for example `ok` */
   server_status: string;
 
-  /** Creation timestamp as reported by Vultr */
+  /** creation timestamp as reported by Vultr */
   date_created: string;
 }
 
-/** One entry from the OS image catalog */
+/** one entry from the OS image catalog */
 export interface VultrOs {
-  /** Image id to pass as `os_id` when creating an instance */
+  /** image id to pass as `os_id` when creating an instance */
   id: number;
 
-  /** Display name, for example `Debian 13 x64` */
+  /** display name, for example `Debian 13 x64` */
   name: string;
 
-  /** Architecture, for example `x64` */
+  /** architecture, for example `x64` */
   arch: string;
 }
 
-/** One entry from the plan catalog */
+/** one entry from the plan catalog */
 export interface VultrPlan {
-  /** Plan id, for example `vc2-1c-1g` */
+  /** plan id, for example `vc2-1c-1g` */
   id: string;
 
-  /** Virtual CPU count */
+  /** virtual CPU count */
   vcpu_count: number;
 
-  /** Memory in megabytes */
+  /** memory in megabytes */
   ram: number;
 
-  /** Base monthly price in USD */
+  /** base monthly price in USD */
   monthly_cost: number;
 
-  /** Regions where the plan can be deployed */
+  /** regions where the plan can be deployed */
   regions: string[];
 }
 
-/** Payload accepted by `POST /instances` */
+/** payload accepted by `POST /instances` */
 export interface CreateInstanceRequest {
-  /** Region id */
+  /** region id */
   region: string;
 
-  /** Plan id */
+  /** plan id */
   plan: string;
 
   /** OS image id */
   os_id: number;
 
-  /** Instance label shown in the Vultr console */
+  /** instance label shown in the Vultr console */
   label: string;
 
-  /** Hostname assigned inside the guest */
+  /** hostname assigned inside the guest */
   hostname?: string;
 
-  /** Base64 encoded cloud-init script */
+  /** base64 encoded cloud-init script */
   user_data: string;
 
-  /** Automatic backup toggle; the bot disables backups to keep the base price */
+  /** automatic backup toggle; the bot disables backups to keep the base price */
   backups?: "enabled" | "disabled";
 }
 
@@ -130,6 +130,7 @@ async function request<T>(token: string, path: string, init: RequestInit = {}): 
   }
 
   const body = await response.text();
+
   if (!response.ok) {
     throw new VultrError(response.status, body.slice(0, 500));
   }
@@ -171,6 +172,7 @@ export async function getInstance(token: string, id: string): Promise<VultrInsta
     if (error instanceof VultrError && error.status === 404) {
       return null;
     }
+
     throw error;
   }
 }

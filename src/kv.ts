@@ -61,9 +61,11 @@ export async function getInstanceBySecret(
   secret: string,
 ): Promise<InstanceRecord | null> {
   const id = await kv.get(secretKey(secret));
+
   if (!id) {
     return null;
   }
+
   return getInstance(kv, id);
 }
 
@@ -94,8 +96,10 @@ export async function listInstanceRecords(kv: KVNamespace): Promise<InstanceReco
     const page = await kv.list<InstanceRecord>({ prefix: INSTANCE_PREFIX, cursor });
     for (const key of page.keys) {
       const record = await getInstance(kv, key.name.slice(INSTANCE_PREFIX.length));
+
       if (record) records.push(record);
     }
+
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
 

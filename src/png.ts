@@ -9,7 +9,7 @@
 /** PNG magic bytes that open every file */
 const SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-/** Precomputed CRC-32 lookup table used by the PNG chunk trailer */
+/** precomputed CRC-32 lookup table used by the PNG chunk trailer */
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let n = 0; n < 256; n += 1) {
@@ -17,6 +17,7 @@ const CRC_TABLE = (() => {
     for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
     table[n] = c >>> 0;
   }
+
   return table;
 })();
 
@@ -46,6 +47,7 @@ function concat(parts: Uint8Array[]): Uint8Array {
     out.set(part, offset);
     offset += part.length;
   }
+
   return out;
 }
 
