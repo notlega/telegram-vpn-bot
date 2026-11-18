@@ -1,5 +1,7 @@
 # telegram-vpn-bot
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Serverless Telegram bot that provisions and destroys **VLESS + REALITY** proxy
 servers on Vultr. Runs entirely on Cloudflare Workers: webhook in, Vultr API
 out, fresh credentials per server, no always-on process to babysit.
@@ -91,7 +93,7 @@ it.
 ### 5. Deploy and register the webhook
 
 Replace `<workers-url>` with your deployment URL, e.g.
-`https://telegram-vpn-bot.your-subdomain.workers.dev`.
+`https://telegram-vpn-bot.<subdomain>.workers.dev`.
 
 ```sh
 bun run deploy
@@ -152,3 +154,14 @@ curl "http://127.0.0.1:8787/ready?token=testtoken&ip=203.0.113.10"
 
 `wrangler dev` loads `.env` automatically (add `--env-file path` for another
 file).
+
+## Contributing
+
+see [CONTRIBUTING.md](CONTRIBUTING.md) for the local setup, code style and commit
+conventions.
+
+checks are manual, there is no ci workflow. run `bun run check` before pushing.
+
+## License
+
+[MIT](LICENSE) © 2026 Ong Hin Journ
