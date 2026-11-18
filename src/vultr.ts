@@ -1,5 +1,5 @@
 /**
- * Thin Vultr API v2 client. Docs: https://www.vultr.com/api/
+ * thin Vultr API v2 client. Docs: https://www.vultr.com/api/
  */
 
 const API_BASE = "https://api.vultr.com/v2";
@@ -86,7 +86,7 @@ export interface CreateInstanceRequest {
 }
 
 /**
- * Performs one authenticated request against the Vultr API.
+ * performs one authenticated request against the Vultr API.
  *
  * @param token — Vultr API token.
  * @param path — path and query string, for example `/instances?per_page=100`.
@@ -113,7 +113,7 @@ async function request<T>(token: string, path: string, init: RequestInit = {}): 
 }
 
 /**
- * Creates a new instance.
+ * creates a new instance.
  *
  * @param token — Vultr API token.
  * @param payload — region, plan, image and cloud-init script.
@@ -131,7 +131,7 @@ export function createInstance(
 }
 
 /**
- * Fetches one instance.
+ * fetches one instance.
  *
  * @param token — Vultr API token.
  * @param id — instance id.
@@ -149,7 +149,7 @@ export async function getInstance(token: string, id: string): Promise<VultrInsta
 }
 
 /**
- * Lists instances in the account (first 100).
+ * lists instances in the account (first 100).
  *
  * @param token — Vultr API token.
  * @returns all instances visible to the token.
@@ -160,7 +160,7 @@ export async function listInstances(token: string): Promise<VultrInstance[]> {
 }
 
 /**
- * Destroys an instance. Billing stops once Vultr processes the request.
+ * destroys an instance. Billing stops once Vultr processes the request.
  *
  * @param token — Vultr API token.
  * @param id — instance id.
@@ -171,7 +171,7 @@ export async function destroyInstance(token: string, id: string): Promise<void> 
 }
 
 /**
- * Lists the OS image catalog.
+ * lists the OS image catalog.
  *
  * @param token — Vultr API token.
  * @returns every image available to the account.
@@ -182,7 +182,7 @@ export async function listOs(token: string): Promise<VultrOs[]> {
 }
 
 /**
- * Lists the plan catalog.
+ * lists the plan catalog.
  *
  * @param token — Vultr API token.
  * @returns up to 500 plans.
@@ -193,7 +193,7 @@ export async function listPlans(token: string): Promise<VultrPlan[]> {
 }
 
 /**
- * Picks the newest x64 image whose name starts with the configured family.
+ * picks the newest x64 image whose name starts with the configured family.
  *
  * @param candidates — OS catalog from {@link listOs}.
  * @param family — name prefix, for example `Debian`.
@@ -207,7 +207,7 @@ export function pickOs(candidates: VultrOs[], family: string): VultrOs | undefin
 }
 
 /**
- * Finds a plan by id.
+ * finds a plan by id.
  *
  * @param candidates — plan catalog from {@link listPlans}.
  * @param id — plan id to match.

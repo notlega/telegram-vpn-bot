@@ -1,5 +1,5 @@
 /**
- * Minimal PNG encoder for 8-bit grayscale images.
+ * minimal PNG encoder for 8-bit grayscale images.
  *
  * Workers have no canvas, so QR codes are rasterised by hand and compressed
  * with the platform CompressionStream (zlib "deflate" flavour, which is what
@@ -21,7 +21,7 @@ const CRC_TABLE = (() => {
 })();
 
 /**
- * Computes the CRC-32 checksum PNG requires for every chunk.
+ * computes the CRC-32 checksum PNG requires for every chunk.
  *
  * @param bytes — chunk type plus data.
  * @returns unsigned 32-bit checksum.
@@ -33,7 +33,7 @@ function crc32(bytes: Uint8Array): number {
 }
 
 /**
- * Joins byte arrays into one contiguous buffer.
+ * joins byte arrays into one contiguous buffer.
  *
  * @param parts — buffers in output order.
  * @returns a new buffer containing all parts.
@@ -50,7 +50,7 @@ function concat(parts: Uint8Array[]): Uint8Array {
 }
 
 /**
- * Wraps data in a PNG chunk: length, type, payload, CRC.
+ * wraps data in a PNG chunk: length, type, payload, CRC.
  *
  * @param type — four character chunk type such as `IHDR`.
  * @param data — chunk payload.
@@ -67,7 +67,7 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 /**
- * Compresses bytes with zlib-wrapped deflate, the encoding PNG's IDAT chunk
+ * compresses bytes with zlib-wrapped deflate, the encoding PNG's IDAT chunk
  * expects.
  *
  * @param data — raw scanline buffer.
@@ -79,7 +79,7 @@ async function deflate(data: Uint8Array): Promise<Uint8Array> {
 }
 
 /**
- * Encodes 8-bit grayscale pixels as a PNG file.
+ * encodes 8-bit grayscale pixels as a PNG file.
  *
  * @param pixels — row-major grayscale samples, one byte per pixel (0 black,
  *   255 white). Length must equal `width * height`.

@@ -1,5 +1,5 @@
 /**
- * Registers or removes the Telegram webhook
+ * registers or removes the Telegram webhook
  *
  * Usage:
  *   bun scripts/set-webhook.ts <workers-url>
@@ -50,7 +50,7 @@ if (!token) {
 const api = (method: string): string => `https://api.telegram.org/bot${token}/${method}`;
 
 /**
- * Calls one Telegram Bot API method and exits on failure.
+ * calls one Telegram Bot API method and exits on failure.
  *
  * @param request — discriminated request describing the method and its payload.
  */
@@ -70,7 +70,7 @@ async function call(request: WebhookRequest): Promise<void> {
 }
 
 /**
- * Validates a worker origin and appends the webhook path.
+ * validates a worker origin and appends the webhook path.
  *
  * @param value — base URL, must use https.
  * @returns the final webhook endpoint.

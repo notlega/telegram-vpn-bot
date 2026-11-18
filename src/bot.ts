@@ -13,21 +13,21 @@ const WELCOME = [
   "/status — list tracked servers",
   "/id — show your Telegram id",
   "",
-  "Only allowlisted users can control the vpn servers.",
+  "only allowlisted users can control the vpn servers",
 ].join("\n");
 
 /**
- * Extracts a human readable message from an unknown thrown value.
+ * extracts a human readable message from an unknown thrown value
  *
- * @param error — value caught from a promise or try block.
- * @returns `error.message` for Error instances, `String(error)` otherwise.
+ * @param error value caught from a promise or try block
+ * @returns `error.message` for `Error` instances, `String(error)` otherwise
  */
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
 /**
- * Posts a placeholder, provisions the server, then replaces the placeholder
+ * posts a placeholder, provisions the server, then replaces the placeholder
  * with either the progress description or the failure reason.
  *
  * @param api — grammY API client.
@@ -43,7 +43,7 @@ async function startProvision(
   chatId: number,
   region: Region,
 ): Promise<void> {
-  const placeholder = await api.sendMessage(chatId, `🛠 Creating ${region.label} server…`);
+  const placeholder = await api.sendMessage(chatId, `🛠 creating ${region.label} server…`);
 
   try {
     const record = await provisionServer(env, publicUrl, chatId, placeholder.message_id, region);
@@ -57,7 +57,7 @@ async function startProvision(
 }
 
 /**
- * Builds the bot: allowlist middleware, command handlers, callback handlers and
+ * builds the bot: allowlist middleware, command handlers, callback handlers and
  * the error boundary. Stateless — one instance is created per webhook request.
  *
  * @param env — worker bindings.
@@ -76,7 +76,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
     if (!context.from || !allowed.has(String(context.from.id))) {
       if (context.chat)
         await context
-          .reply(`Unauthorized. Your id: ${context.from?.id ?? "unknown"}`)
+          .reply(`unauthorized. your id: ${context.from?.id ?? "unknown"}`)
           .catch((error) => console.warn("unauthorized notice failed", error));
 
       return;
@@ -87,7 +87,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
   bot.command("start", (context) => context.reply(WELCOME));
   bot.command("help", (context) => context.reply(WELCOME));
-  bot.command("id", (context) => context.reply(`Your Telegram id: ${context.from?.id}`));
+  bot.command("id", (context) => context.reply(`your Telegram id: ${context.from?.id}`));
 
   bot.command("up", async (context) => {
     const argument = context.match.trim();
@@ -100,7 +100,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
         keyboard.text(region.label, `up:${region.id}`);
       });
 
-      await context.reply("Choose a region:", { reply_markup: keyboard });
+      await context.reply("choose a region:", { reply_markup: keyboard });
       return;
     }
 
@@ -112,7 +112,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
     if (!region) {
       await context.reply(
-        `Unknown region "${argument}". Try: ${parseRegions(env)
+        `unknown region "${argument}". try: ${parseRegions(env)
           .map((r) => r.id)
           .join(", ")}`,
       );
@@ -125,7 +125,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
   bot.callbackQuery(/^up:(.+)$/, async (context) => {
     const region = findRegion(env, context.match[1] ?? "");
 
-    await context.answerCallbackQuery(region ? `Creating ${region.label}…` : "Unknown region");
+    await context.answerCallbackQuery(region ? `creating ${region.label}…` : "unknown region");
 
     if (!region || !context.chat) {
       return;
@@ -138,7 +138,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
     const records = await listInstanceRecords(env.KV);
 
     if (records.length === 0) {
-      await context.reply("Nothing to destroy.");
+      await context.reply("nothing to destroy");
       return;
     }
 
@@ -148,14 +148,14 @@ export function createBot(env: Env, publicUrl: string): Bot {
       keyboard.text(`${record.regionLabel} · ${record.ip}`, `down:${record.id}`).row();
     }
 
-    await context.reply("Destroy which server?", { reply_markup: keyboard });
+    await context.reply("destroy which server?", { reply_markup: keyboard });
   });
 
   bot.callbackQuery(/^down:(.+)$/, async (context) => {
     const record = await getInstance(env.KV, context.match[1] ?? "");
 
     if (!record) {
-      await context.answerCallbackQuery("Server is gone");
+      await context.answerCallbackQuery("server is gone");
       return;
     }
 
@@ -165,7 +165,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       .text("Cancel", `cancel:${record.id}`);
 
     await context
-      .editMessageText(`Destroy ${record.regionLabel} (${record.ip})?\nThis cannot be undone.`, {
+      .editMessageText(`destroy ${record.regionLabel} (${record.ip})?\nthis cannot be undone`, {
         reply_markup: keyboard,
       })
       .catch((error) => console.warn("destroy confirmation render failed", error));
@@ -176,11 +176,11 @@ export function createBot(env: Env, publicUrl: string): Bot {
     const record = await getInstance(env.KV, id);
 
     if (!record) {
-      await context.answerCallbackQuery("Already gone");
+      await context.answerCallbackQuery("already gone");
       return;
     }
 
-    await context.answerCallbackQuery("Destroying…");
+    await context.answerCallbackQuery("destroying…");
 
     try {
       await destroyInstance(env.VULTR_API_TOKEN, id).catch((error: unknown) => {
@@ -192,20 +192,20 @@ export function createBot(env: Env, publicUrl: string): Bot {
       });
       await deleteInstanceRecord(env.KV, record);
       await context
-        .editMessageText(`🗑 Destroyed ${record.regionLabel} (${record.ip})`)
+        .editMessageText(`🗑 destroyed ${record.regionLabel} (${record.ip})`)
         .catch((error) => console.warn("destroyed notice failed", error));
     } catch (error) {
       console.error("destroy failed", error);
       await context
-        .editMessageText(`❌ Destroy failed: ${errorText(error)}`)
+        .editMessageText(`❌ destroy failed: ${errorText(error)}`)
         .catch((noticeError) => console.warn("destroy failure notice failed", noticeError));
     }
   });
 
   bot.callbackQuery(/^cancel:(.+)$/, async (context) => {
-    await context.answerCallbackQuery("Cancelled");
+    await context.answerCallbackQuery("cancelled");
     await context
-      .editMessageText("Cancelled.")
+      .editMessageText("cancelled")
       .catch((error) => console.warn("cancel notice failed", error));
   });
 

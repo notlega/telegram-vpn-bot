@@ -1,24 +1,32 @@
 /**
- * Bindings and configuration the worker receives from `wrangler.toml` and the
+ * bindings and configuration the worker receives from `wrangler.toml` and the
  * Cloudflare secret store.
  */
 export interface Env {
   /** Workers KV namespace holding instance records and callback tokens. */
   KV: KVNamespace;
+
   /** Telegram bot token issued by @BotFather. Secret. */
   BOT_TOKEN: string;
+
   /** Vultr API v2 token with instance and IPv4 read/write access. Secret. */
   VULTR_API_TOKEN: string;
+
   /** Comma separated Telegram user ids allowed to control the bot. Secret. */
   ALLOWED_USER_ID: string;
+
   /** REALITY camouflage host. Its TLS handshake is what an unauthenticated peer sees. */
   SNI: string;
+
   /** `id:label` pairs offered in the `/up` menu, for example `icn:Seoul,nrt:Tokyo`. */
   REGIONS: string;
+
   /** Vultr plan id used for new instances. */
   PLAN: string;
+
   /** OS family prefix resolved to the newest matching x64 image, for example `Debian`. */
   OS_NAME: string;
+
   /** When set, webhook requests must carry this `X-Telegram-Bot-Api-Secret-Token`. */
   WEBHOOK_SECRET?: string;
 }
@@ -27,7 +35,7 @@ export interface Env {
 export type InstanceState = "provisioning" | "ready" | "failed";
 
 /**
- * Everything the bot needs to remember about one Vultr instance. Stored in KV
+ * everything the bot needs to remember about one Vultr instance. Stored in KV
  * under `inst:<id>`; the `secret` field is additionally indexed as
  * `secret:<secret>` so the bootstrap callback can authenticate itself.
  */

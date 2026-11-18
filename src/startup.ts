@@ -1,5 +1,5 @@
 /**
- * Provisions a fresh Vultr instance entirely from user-data (cloud-init).
+ * provisions a fresh Vultr instance entirely from user-data (cloud-init).
  *
  * Vultr Alpine images ship without cloud-init, so the bot targets Debian by
  * default (configurable via OS_NAME). The script installs Xray, wires a
@@ -23,7 +23,7 @@ export interface ProvisionParams {
 }
 
 /**
- * Builds the Xray server config: one VLESS + REALITY inbound on `:443` with
+ * builds the Xray server config: one VLESS + REALITY inbound on `:443` with
  * XTLS Vision, direct outbound, private ranges blocked.
  *
  * @param params — credentials for this instance.
@@ -70,7 +70,7 @@ export function buildServerConfig(params: ProvisionParams): string {
 }
 
 /**
- * Builds the cloud-init shell script that prepares a fresh Debian box.
+ * builds the cloud-init shell script that prepares a fresh Debian box.
  *
  * The script installs curl and unzip, downloads the latest Xray release,
  * writes the config and a systemd unit, enables BBR, then calls the worker back
@@ -141,7 +141,7 @@ done
 }
 
 /**
- * Base64 encodes a bootstrap script the way Vultr's `user_data` field expects.
+ * base64 encodes a bootstrap script the way Vultr's `user_data` field expects.
  *
  * @param script — plain shell script.
  * @returns base64 representation.

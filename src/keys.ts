@@ -1,5 +1,5 @@
 /**
- * Per-instance credential generation.
+ * per-instance credential generation.
  *
  * Xray speaks base64url (raw, unpadded) for REALITY x25519 keys and hex for
  * short ids. Everything is derived from WebCrypto so nothing has to be stored
@@ -15,7 +15,7 @@ export interface RealityKeyPair {
 }
 
 /**
- * Encodes bytes as unpadded base64url, the format Xray uses for REALITY keys.
+ * encodes bytes as unpadded base64url, the format Xray uses for REALITY keys.
  *
  * @param bytes — raw key material.
  * @returns base64url string without `=` padding.
@@ -27,7 +27,7 @@ export function toBase64Url(bytes: Uint8Array): string {
 }
 
 /**
- * Decodes an unpadded base64url string produced by {@link toBase64Url}.
+ * decodes an unpadded base64url string produced by {@link toBase64Url}.
  *
  * @param value — base64url string, padding optional.
  * @returns the decoded bytes.
@@ -44,7 +44,7 @@ export function fromBase64Url(value: string): Uint8Array {
 }
 
 /**
- * Generates a fresh X25519 key pair for one server.
+ * generates a fresh X25519 key pair for one server.
  *
  * The private half is exported raw when the runtime allows it and falls back to
  * the trailing 32 bytes of the PKCS#8 encoding otherwise.
@@ -66,7 +66,7 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
       (await crypto.subtle.exportKey("raw", keyPair.privateKey)) as ArrayBuffer,
     );
   } catch (error) {
-    // Some runtimes only allow PKCS#8 export; the trailing 32 bytes are the seed.
+    // some runtimes only allow PKCS#8 export; the trailing 32 bytes are the seed.
     console.warn("raw private key export unavailable, falling back to PKCS#8", error);
     const pkcs8 = new Uint8Array(
       (await crypto.subtle.exportKey("pkcs8", keyPair.privateKey)) as ArrayBuffer,
@@ -81,7 +81,7 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
 }
 
 /**
- * Generates a REALITY short id.
+ * generates a REALITY short id.
  *
  * @param byteLength — number of random bytes; Xray accepts up to 8 bytes
  *   (16 hex characters). Defaults to 4.
@@ -92,7 +92,7 @@ export function generateShortId(byteLength = 4): string {
 }
 
 /**
- * Generates a random UUID v4 for use as the VLESS user id.
+ * generates a random UUID v4 for use as the VLESS user id.
  *
  * @returns canonical UUID string.
  */
@@ -101,7 +101,7 @@ export function generateUuid(): string {
 }
 
 /**
- * Generates cryptographically random bytes as lowercase hex.
+ * generates cryptographically random bytes as lowercase hex.
  *
  * @param byteLength — number of random bytes.
  * @returns hex string, `byteLength * 2` characters long.

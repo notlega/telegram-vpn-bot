@@ -2,7 +2,7 @@ import type { InstanceRecord } from "./env";
 import { buildVlessLink } from "./link";
 
 /**
- * Formats how long ago a record was created.
+ * formats how long ago a record was created.
  *
  * @param createdAt — creation timestamp in epoch milliseconds.
  * @returns compact age such as `12m`, `5h` or `3d`.
@@ -16,7 +16,7 @@ export function formatAge(createdAt: number): string {
 }
 
 /**
- * Builds the share link for a tracked instance.
+ * builds the share link for a tracked instance.
  *
  * @param record — instance record with a resolved IP.
  * @returns the `vless://` link clients import.
@@ -33,7 +33,7 @@ export function recordLink(record: InstanceRecord): string {
 }
 
 /**
- * Renders the "server ready" chat message.
+ * renders the "server ready" chat message.
  *
  * @param record — instance that finished provisioning.
  * @param link — share link for the client.
@@ -44,10 +44,10 @@ export function recordLink(record: InstanceRecord): string {
 export function readyMessage(record: InstanceRecord, link: string, note?: string): string {
   return [
     `✅ ${record.regionLabel} server ready`,
-    `IP: ${record.ip}`,
+    `ip: ${record.ip}`,
     `instance: ${record.id}`,
     note ? `\n${note}\n` : "",
-    "Import in v2rayN: Servers → Import from clipboard.",
+    "import in v2rayN: servers → import from clipboard",
     "",
     link,
   ]
@@ -56,7 +56,7 @@ export function readyMessage(record: InstanceRecord, link: string, note?: string
 }
 
 /**
- * Renders the provisioning-failure chat message.
+ * renders the provisioning-failure chat message.
  *
  * @param record — instance that failed.
  * @param reason — short explanation shown to the operator.
@@ -68,12 +68,12 @@ export function failedMessage(record: InstanceRecord, reason: string): string {
     `instance: ${record.id}`,
     `reason: ${reason}`,
     "",
-    "Check /status, then /down to remove the instance.",
+    "check /status, then /down to remove the instance",
   ].join("\n");
 }
 
 /**
- * Renders one line of the `/status` list.
+ * renders one line of the `/status` list.
  *
  * @param record — tracked instance.
  * @param liveState — optional live power state from the Vultr API.
@@ -85,7 +85,7 @@ export function instanceLine(record: InstanceRecord, liveState?: string): string
 }
 
 /**
- * Renders the full `/status` reply.
+ * renders the full `/status` reply.
  *
  * @param records — tracked instances.
  * @param live — live power states keyed by instance id; missing keys fall back
@@ -93,7 +93,7 @@ export function instanceLine(record: InstanceRecord, liveState?: string): string
  * @returns plain-text message body.
  */
 export function statusMessage(records: InstanceRecord[], live: Map<string, string>): string {
-  if (records.length === 0) return "No servers tracked. Use /up to create one.";
+  if (records.length === 0) return "no servers tracked. use /up to create one";
   const lines = records.map((record) => instanceLine(record, live.get(record.id)));
-  return ["Tracked servers:", ...lines, "", "/up — create, /down — destroy"].join("\n");
+  return ["tracked servers:", ...lines, "", "/up — create, /down — destroy"].join("\n");
 }

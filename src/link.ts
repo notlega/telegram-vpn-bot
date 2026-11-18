@@ -1,5 +1,5 @@
 /**
- * Share-link construction for the provisioned servers.
+ * share-link construction for the provisioned servers.
  */
 
 /** Inputs needed to build a client-importable VLESS + REALITY link. */
@@ -23,7 +23,7 @@ export interface VlessParams {
 }
 
 /**
- * Builds a VLESS + REALITY share link importable by v2rayN and v2rayNG.
+ * builds a VLESS + REALITY share link importable by v2rayN and v2rayNG.
  *
  * The link hard-codes the settings this bot provisions: TCP transport, REALITY
  * security, `chrome` fingerprint and XTLS Vision flow.

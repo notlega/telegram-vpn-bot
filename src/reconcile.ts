@@ -11,7 +11,7 @@ const READY_FALLBACK_MS = 8 * 60_000;
 const TIMEOUT_MS = 15 * 60_000;
 
 /**
- * Edits the original status message, falling back to a new message when the
+ * edits the original status message, falling back to a new message when the
  * edit fails (for example after the message was deleted).
  *
  * @param api — grammY API client.
@@ -30,7 +30,7 @@ async function replaceOrSend(api: Api, record: InstanceRecord, text: string): Pr
 }
 
 /**
- * Announces a ready server: edits the status message, then sends the QR code.
+ * announces a ready server: edits the status message, then sends the QR code.
  *
  * @param env — worker bindings.
  * @param record — record with a resolved IP and credentials.
@@ -51,7 +51,7 @@ export async function publishReady(env: Env, record: InstanceRecord, note?: stri
 }
 
 /**
- * Handles the cloud-init completion callback `GET /ready?token=…&ip=…`.
+ * handles the cloud-init completion callback `GET /ready?token=…&ip=…`.
  *
  * Resolves the record through the token index, stores the reported IP, flips
  * the state to `ready` and publishes the link. Idempotent: repeated callbacks
@@ -85,7 +85,7 @@ export async function handleReady(env: Env, request: Request): Promise<Response>
 }
 
 /**
- * Marks a record as failed and reports the reason in chat.
+ * marks a record as failed and reports the reason in chat.
  *
  * @param env — worker bindings.
  * @param record — record being abandoned.
@@ -98,7 +98,7 @@ async function markFailed(env: Env, record: InstanceRecord, reason: string): Pro
 }
 
 /**
- * Cron entry point: advances every record still in `provisioning`.
+ * cron entry point: advances every record still in `provisioning`.
  *
  * Publishes records whose instance is running past the fallback window, fails
  * records whose instance disappeared, and times out records older than 15
@@ -134,7 +134,7 @@ export async function reconcile(env: Env): Promise<void> {
       await publishReady(
         env,
         updated,
-        "Note: bootstrap callback was not received; link uses the Vultr IP.",
+        "note: bootstrap callback was not received; link uses the Vultr ip",
       ).catch((error) => console.error("publishReady fallback failed", error));
       continue;
     }

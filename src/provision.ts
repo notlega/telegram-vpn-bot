@@ -13,7 +13,7 @@ import {
 } from "./vultr";
 
 /**
- * Parses the `REGIONS` configuration string into region options.
+ * parses the `REGIONS` configuration string into region options.
  *
  * @param env — worker bindings; only `REGIONS` is read.
  * @returns regions in menu order; malformed entries are dropped.
@@ -29,7 +29,7 @@ export function parseRegions(env: Env): Region[] {
 }
 
 /**
- * Finds a region by id.
+ * finds a region by id.
  *
  * @param env — worker bindings.
  * @param id — Vultr region id such as `icn`.
@@ -40,7 +40,7 @@ export function findRegion(env: Env, id: string): Region | undefined {
 }
 
 /**
- * Creates a Vultr instance and registers it for reconciliation.
+ * creates a Vultr instance and registers it for reconciliation.
  *
  * Generates a fresh key pair, UUID and short id, resolves the OS image and plan
  * from the live Vultr catalogs, then submits the bootstrap script as user-data.
@@ -128,7 +128,7 @@ export async function provisionServer(
 }
 
 /**
- * Renders the intermediate "creating server" chat message.
+ * renders the intermediate "creating server" chat message.
  *
  * @param record — record stored right after the instance was created.
  * @returns plain-text message body.
@@ -138,7 +138,7 @@ export function describeProvisioning(record: InstanceRecord): string {
     `🛠 Creating ${record.regionLabel} server`,
     `instance: ${record.id}`,
     "",
-    "Installing Xray, this takes ~2 minutes.",
-    "I will post the link here when it answers.",
+    "installing Xray, this takes ~2 minutes",
+    "i will post the link here when it answers",
   ].join("\n");
 }

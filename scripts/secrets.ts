@@ -1,5 +1,5 @@
 /**
- * Pushes worker secrets from .env to Cloudflare
+ * pushes worker secrets from .env to Cloudflare
  *
  * Usage: bun scripts/secrets.ts
  *

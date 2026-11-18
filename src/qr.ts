@@ -2,7 +2,7 @@ import qrcode from "qrcode-generator";
 import { encodeGrayscalePng } from "./png";
 
 /**
- * Rasterises text into a QR code PNG without a canvas.
+ * rasterises text into a QR code PNG without a canvas.
  *
  * @param text — payload to encode, usually a share link.
  * @param scale — pixels per QR module. Defaults to 8.

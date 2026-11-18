@@ -6,7 +6,7 @@ const INSTANCE_PREFIX = "inst:";
 const SECRET_PREFIX = "secret:";
 
 /**
- * Builds the KV key for one instance record.
+ * builds the KV key for one instance record.
  *
  * @param id — Vultr instance id.
  * @returns key in the form `inst:<id>`.
@@ -16,7 +16,7 @@ function instanceKey(id: string): string {
 }
 
 /**
- * Builds the KV key for the callback-token index.
+ * builds the KV key for the callback-token index.
  *
  * @param secret — per-instance callback token.
  * @returns key in the form `secret:<token>`.
@@ -26,7 +26,7 @@ function secretKey(secret: string): string {
 }
 
 /**
- * Persists an instance record together with its callback-token index entry.
+ * persists an instance record together with its callback-token index entry.
  *
  * @param kv — KV binding.
  * @param record — record to write; overwrites any previous copy.
@@ -39,7 +39,7 @@ export async function saveInstance(kv: KVNamespace, record: InstanceRecord): Pro
 }
 
 /**
- * Reads an instance record.
+ * reads an instance record.
  *
  * @param kv — KV binding.
  * @param id — Vultr instance id.
@@ -50,7 +50,7 @@ export async function getInstance(kv: KVNamespace, id: string): Promise<Instance
 }
 
 /**
- * Looks up an instance by the callback token a bootstrap script presents.
+ * looks up an instance by the callback token a bootstrap script presents.
  *
  * @param kv — KV binding.
  * @param secret — one-time callback token.
@@ -66,7 +66,7 @@ export async function getInstanceBySecret(
 }
 
 /**
- * Removes an instance record and its callback-token index entry.
+ * removes an instance record and its callback-token index entry.
  *
  * @param kv — KV binding.
  * @param record — record being destroyed.
@@ -76,7 +76,7 @@ export async function deleteInstanceRecord(kv: KVNamespace, record: InstanceReco
 }
 
 /**
- * Lists every tracked instance, oldest first.
+ * lists every tracked instance, oldest first.
  *
  * Handles KV pagination internally and skips index entries that no longer have
  * a body.
