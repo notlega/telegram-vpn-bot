@@ -43,7 +43,7 @@ const token = process.env.BOT_TOKEN;
 const secret = process.env.WEBHOOK_SECRET;
 
 if (!token) {
-  console.error("BOT_TOKEN missing. copy .env.example to .env and fill it in.");
+  console.error("BOT_TOKEN missing. copy .env.example to .env and fill it in");
   process.exit(1);
 }
 

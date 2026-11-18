@@ -12,7 +12,7 @@ const wrangler = new URL("../node_modules/.bin/wrangler", import.meta.url).pathn
 const wranglerExists = await Bun.file(wrangler).exists();
 
 if (!wranglerExists) {
-  console.error("wrangler not found. run `bun install`, then `bunx wrangler login`.");
+  console.error("wrangler not found. run `bun install`, then `bunx wrangler login`");
   process.exit(1);
 }
 
