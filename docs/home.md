@@ -35,7 +35,7 @@ bunx wrangler kv namespace create KV           # paste id into wrangler.toml
 cp .env.example .env                           # fill in 4 values
 bun run secrets                                # push them to Cloudflare
 bun run deploy
-bun run set-webhook -- https://telegram-vpn-bot.<subdomain>.workers.dev
+bun run set-webhook -- <workers-url>
 ```
 
 Then open the bot and send `/up`.

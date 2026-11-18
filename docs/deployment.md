@@ -93,19 +93,20 @@ Change a value → `bun run deploy` again.
 bun run deploy
 ```
 
-Note the printed `https://telegram-vpn-bot.<subdomain>.workers.dev` URL.
+Note the printed URL, referred to below as `<workers-url>`. it looks like
+`https://telegram-vpn-bot.<subdomain>.workers.dev`.
 
 ## 7. Register the webhook
 
 ```sh
-bun run set-webhook -- https://telegram-vpn-bot.<subdomain>.workers.dev
+bun run set-webhook -- <workers-url>
 ```
 
 Expected: `webhook set: ... (secret token enabled)`.
 
 ## 8. Verification checklist
 
-1. `curl https://telegram-vpn-bot.<subdomain>.workers.dev/` → `telegram-vpn-bot up`
+1. `curl <workers-url>/` → `telegram-vpn-bot up`
 2. Bot `/id` → matches `ALLOWED_USER_ID`
 3. Bot `/up` → pick a region → status message appears
 4. ~2 minutes later → link + QR arrive
