@@ -1,3 +1,5 @@
+import type { Gatekeeper } from "./gatekeeper";
+
 /**
  * bindings and configuration the worker receives from `wrangler.toml` and the
  * Cloudflare secret store
@@ -5,6 +7,9 @@
 export interface Env {
   /** Workers KV namespace holding instance records and callback tokens */
   KV: KVNamespace;
+
+  /** per-sender abuse gate for updates outside the allowlist */
+  GATEKEEPER: DurableObjectNamespace<Gatekeeper>;
 
   /** Telegram bot token issued by @BotFather. Secret */
   BOT_TOKEN: string;

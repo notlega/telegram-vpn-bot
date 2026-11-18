@@ -1,6 +1,7 @@
 import { webhookCallback } from "grammy";
 import { createBot } from "./bot";
 import type { Env } from "./env";
+import { Gatekeeper } from "./gatekeeper";
 import { handleReady, reconcile } from "./reconcile";
 
 /**
@@ -45,3 +46,5 @@ export default {
     ctx.waitUntil(reconcile(env));
   },
 };
+
+export { Gatekeeper };

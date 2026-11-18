@@ -120,7 +120,9 @@ user-data; Vultr's Alpine images do not ship it.
 
 ## Security notes
 
-- Allowlist enforced on every update (`ALLOWED_USER_ID`, comma separated)
+- Allowlist enforced on every update (`ALLOWED_USER_ID`, comma separated).
+  unauthorized senders get no reply; the second message within an hour blocks
+  them for a day via a durable object gatekeeper
 - Telegram webhook requires `X-Telegram-Bot-Api-Secret-Token`
 - Destroy always requires an inline confirmation
 - Credentials are generated per instance and never written to the repository.

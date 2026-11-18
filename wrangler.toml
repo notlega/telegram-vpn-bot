@@ -19,3 +19,11 @@ SNI = "www.yahoo.com"
 REGIONS = "icn:Seoul,nrt:Tokyo,sgp:Singapore"
 PLAN = "vc2-1c-1g"
 OS_NAME = "Debian"
+
+[[durable_objects.bindings]]
+name = "GATEKEEPER"
+class_name = "Gatekeeper"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Gatekeeper"]

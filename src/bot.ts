@@ -73,16 +73,21 @@ export function createBot(env: Env, publicUrl: string): Bot {
   );
 
   bot.use(async (context, next) => {
-    if (!context.from || !allowed.has(String(context.from.id))) {
-      if (context.chat)
-        await context
-          .reply(`unauthorized. your id: ${context.from?.id ?? "unknown"}`)
-          .catch((error) => console.warn("unauthorized notice failed", error));
+    const userId = context.from?.id;
 
+    if (userId !== undefined && allowed.has(String(userId))) {
+      await next();
       return;
     }
 
-    await next();
+    if (userId === undefined) {
+      return;
+    }
+
+    const gate = env.GATEKEEPER.get(env.GATEKEEPER.idFromName(String(userId)));
+    const verdict = await gate.check();
+
+    console.warn(`unauthorized update from ${userId}: ${verdict}`);
   });
 
   bot.command("start", (context) => context.reply(WELCOME));
