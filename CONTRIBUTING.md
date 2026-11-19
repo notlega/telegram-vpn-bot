@@ -39,7 +39,7 @@ bunx wrangler deploy --dry-run
 biome owns formatting and linting. beyond that:
 
 - lowercase sentence starts in comments, log strings and doc summaries. keep
-  formal names, product names and identifiers as-is (`Telegram`, `Vultr`,
+  formal names, product names and identifiers as-is (`Telegram`, `Linode`,
   `BOT_TOKEN`)
 - no trailing period in doc summaries, log strings, table cells and commit
   subjects
@@ -76,6 +76,6 @@ are lowercase.
 
 ## security
 
-never commit `.env`, bot tokens, vultr api tokens or generated `vless://` links.
+never commit `.env`, bot tokens, linode api tokens or generated `vless://` links.
 the bot stores credentials in workers kv only. see the security notes in the
 readme.

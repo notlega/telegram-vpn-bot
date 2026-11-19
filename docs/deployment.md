@@ -7,7 +7,7 @@ Zero → live in about ten minutes.
 | Item                           | Where                                                        |
 | ------------------------------ | ------------------------------------------------------------ |
 | Cloudflare account (free plan) | dash.cloudflare.com                                          |
-| Vultr account + API token      | Vultr → Account → API (enable IPv4 + Instances read/write)   |
+| Linode account + api token     | cloud.linode.com → profile → api tokens (read/write)         |
 | Telegram bot token             | [@BotFather](https://t.me/BotFather) → `/newbot`             |
 | Telegram user id (optional)    | [@userinfobot](https://t.me/userinfobot), for access control |
 
@@ -53,7 +53,7 @@ Fill in:
 
 ```
 BOT_TOKEN=123456789:AA...
-VULTR_API_TOKEN=...
+LINODE_API_TOKEN=...
 ALLOWED_USER_ID=123456789
 WEBHOOK_SECRET=any-long-random-string
 ```
@@ -78,17 +78,18 @@ relying on `wrangler login`; both `bun run secrets` and `bun run deploy` use it.
 
 `wrangler.toml` `[vars]`:
 
-| Var       | Default                             | Meaning                                            |
-| --------- | ----------------------------------- | -------------------------------------------------- |
-| `REGIONS` | `icn:Seoul,nrt:Tokyo,sgp:Singapore` | region buttons in `/up`                            |
-| `PLAN`    | `vc2-1c-1g`                         | Vultr plan id (≈$5/mo, backups disabled)           |
-| `OS_NAME` | `Debian`                            | OS family prefix, resolved to the newest x64 image |
-| `SNI`     | `www.yahoo.com`                     | REALITY camouflage destination                     |
+| Var       | Default                                          | Meaning                                  |
+| --------- | ------------------------------------------------ | ---------------------------------------- |
+| `REGIONS` | `jp-tyo-3:Tokyo,jp-osa:Osaka,sg-sin-2:Singapore` | region buttons in `/up`                  |
+| `TYPE`    | `g6-nanode-1`                                    | linode plan id (≈$5/mo)                  |
+| `IMAGE`   | `linode/debian13`                                | linode image id, must support cloud-init |
+| `SNI`     | `www.yahoo.com`                                  | REALITY camouflage destination           |
 
 Change a value → `bun run deploy` again.
 
 > Debian (not Alpine) because the bootstrap depends on cloud-init user-data;
-> Vultr's Alpine images do not ship cloud-init.
+> the bot rejects images without cloud-init support, so Alpine needs a custom
+> golden image before it can be used.
 
 ## 6. Deploy
 
@@ -116,9 +117,9 @@ Expected: `webhook set: ... (secret token enabled)`.
 5. Import the link in a client (see [Clients](clients)) and load `ifconfig.me`. It
    must show the new server IP
 6. Bot `/status` → shows `ready/running`
-7. Bot `/down` → confirm → instance disappears from the Vultr console
+7. Bot `/down` → confirm → instance disappears from the linode console
 
-If step 4 fails, open the instance in the Vultr console and read
+If step 4 fails, open the instance in the linode lish console and read
 `/var/log/vpn-setup.log`, then see the troubleshooting table in [Operations](operations).
 
 ## Updates
@@ -163,5 +164,5 @@ bunx wrangler kv namespace delete --namespace-id <id>
 wrangler delete --name <old-worker>
 ```
 
-Destroy all Vultr instances first with `/down`; deleting the worker leaves any
+Destroy all linode instances first with `/down`; deleting the worker leaves any
 running instance billing silently.

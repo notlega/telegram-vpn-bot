@@ -3,12 +3,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Serverless Telegram bot that provisions and destroys **VLESS + REALITY** proxy
-servers on Vultr. Runs entirely on Cloudflare Workers: webhook in, Vultr API
+servers on Linode. Runs entirely on Cloudflare Workers: webhook in, Linode API
 out, fresh credentials per server, no always-on process to babysit.
 
 ## What it does
 
-- `/up`: choose a region (Seoul / Tokyo / Singapore). The bot creates a Vultr
+- `/up`: choose a region (Tokyo / Osaka / Singapore). The bot creates a linode
   instance, waits for it to bootstrap Xray, then posts an importable
   `vless://` link and a QR code.
 - `/down`: destroy a tracked instance (two-step confirmation).
@@ -24,7 +24,7 @@ a bearer credential, so treat it as a secret.
 ```mermaid
 flowchart LR
     tg[Telegram] -- webhook --> w[Worker · grammY]
-    w -- REST --> v[Vultr API]
+    w -- REST --> v[Linode API]
     v -- boots --> vps["VPS · user-data installs Xray, systemd unit, BBR"]
     vps -- "GET /ready?token=…" --> w
     cron["cron (* * * * *)"] -- reconcile provisioning records, publish links --> w
@@ -34,7 +34,7 @@ flowchart LR
 State lives in Workers KV (`inst:<id>`, `secret:<token>`). A cloud-init script
 calls `/ready` with a per-instance token, and cron reconciles when that callback
 is lost. Eight minutes after create, a running instance is published with its
-Vultr IP and a warning. Provisioning records fail after 15 minutes.
+linode ip and a warning. Provisioning records fail after 15 minutes.
 
 ## Documentation
 
@@ -53,7 +53,7 @@ Extended docs live in [`docs/`](docs/home.md) and mirror the
 ### 1. Prerequisites
 
 - Cloudflare account (free plan is enough)
-- Vultr account + API token (Account → API, enable IPv4 + instances read/write)
+- Linode account + api token (cloud.linode.com → profile → api tokens)
 - Telegram bot token from [@BotFather](https://t.me/BotFather)
 - Optional: your Telegram user id from [@userinfobot](https://t.me/userinfobot), for
   access control
@@ -111,15 +111,16 @@ Open the bot, `/id` to double check the allowlist, then `/up`.
 
 `wrangler.toml`:
 
-| Var       | Meaning                                                                          |
-| --------- | -------------------------------------------------------------------------------- |
-| `REGIONS` | `id:label` pairs offered in the `/up` menu (`icn:Seoul,nrt:Tokyo,sgp:Singapore`) |
-| `PLAN`    | Vultr plan id, default `vc2-1c-1g` without backups enabled (~$5/mo)              |
-| `OS_NAME` | OS family prefix to resolve dynamically, default `Debian`                        |
-| `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                          |
+| Var       | Meaning                                                                    |
+| --------- | -------------------------------------------------------------------------- |
+| `REGIONS` | `id:label` pairs offered in the `/up` menu (`jp-tyo-3:Tokyo,jp-osa:Osaka`) |
+| `TYPE`    | linode plan id, default `g6-nanode-1` (~$5/mo)                             |
+| `IMAGE`   | linode image id, must support cloud-init, default `linode/debian13`        |
+| `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                    |
 
-`OS_NAME` defaults to Debian because the bootstrap script needs cloud-init for
-user-data; Vultr's Alpine images do not ship it.
+`IMAGE` must support cloud-init, otherwise the bootstrap user data never runs.
+the bot checks the image capabilities and refuses images without it, which rules
+out Alpine until you build a cloud-init-ready golden image.
 
 ## Security notes
 
@@ -135,10 +136,10 @@ user-data; Vultr's Alpine images do not ship it.
 
 ## Limits
 
-- One Vultr account token, no multi-tenant support
+- One linode account token, no multi-tenant support
 - No automatic GFW/IP-burn detection; `/status` shows state and humans decide
-- Provisioning assumes Vultr's Debian images and user-data support
-- `vc2-1c-1g` availability varies per region; a Vultr 4xx will be reported in chat
+- Provisioning assumes a cloud-init capable linode image
+- `g6-nanode-1` availability varies per region; a linode 4xx will be reported in chat
 
 ## Development
 

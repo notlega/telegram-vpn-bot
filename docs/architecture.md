@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
     tg[Telegram] -- webhook --> w[Worker · grammY]
-    w -- REST --> v[Vultr API]
+    w -- REST --> v[Linode API]
     v -- boots --> vps["VPS · user-data installs Xray, systemd unit, BBR"]
     vps -- "GET /ready?token=…" --> w
     cron["cron (* * * * *)"] -- reconcile provisioning records, publish links --> w
@@ -25,8 +25,8 @@ Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
 
 ## Provisioning lifecycle
 
-1. **`/up` pressed.** The worker resolves the OS image and plan from the Vultr API
-   (`OS_NAME` prefix match on x64 images, `PLAN` id match), generates
+1. **`/up` pressed.** The worker confirms the configured image supports
+   cloud-init (`IMAGE`), generates
    credentials, and builds two artifacts:
    - the Xray server config (REALITY inbound on `:443`, VLESS + Vision)
    - a bootstrap shell script containing that config, a systemd unit, BBR
@@ -45,12 +45,12 @@ Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
 
 ### Reconciliation fallbacks
 
-| Situation                        | Behaviour                                                                  |
-| -------------------------------- | -------------------------------------------------------------------------- |
-| Callback arrives                 | immediate publish (normal path)                                            |
-| Callback lost, instance running  | cron publishes after **8 minutes** using the Vultr IP, with a warning note |
-| Instance vanished from Vultr     | cron marks `failed` on the next tick                                       |
-| No callback after **15 minutes** | cron marks `failed`                                                        |
+| Situation                        | Behaviour                                                                   |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| Callback arrives                 | immediate publish (normal path)                                             |
+| Callback lost, instance running  | cron publishes after **8 minutes** using the linode ip, with a warning note |
+| Instance vanished from Linode    | cron marks `failed` on the next tick                                        |
+| No callback after **15 minutes** | cron marks `failed`                                                         |
 
 Cron only touches records in `provisioning`, so a quiet fleet costs nothing.
 
@@ -59,22 +59,22 @@ Cron only touches records in `provisioning`, so a quiet fleet costs nothing.
 Two key families:
 
 ```
-inst:<vultr-instance-id>  -> InstanceRecord JSON
-secret:<callback-token>   -> "<vultr-instance-id>"
+inst:<instance-id>  -> InstanceRecord JSON
+secret:<callback-token>   -> "<instance-id>"
 ```
 
 `InstanceRecord`:
 
-| Field                                               | Meaning                                  |
-| --------------------------------------------------- | ---------------------------------------- |
-| `id`                                                | Vultr instance id                        |
-| `region`, `regionLabel`                             | `icn` / Seoul etc.                       |
-| `ip`                                                | reported by callback (or Vultr fallback) |
-| `state`                                             | `provisioning` \| `ready` \| `failed`    |
-| `chatId`, `messageId`                               | where the status message lives           |
-| `secret`                                            | one-time callback token                  |
-| `uuid`, `privateKey`, `publicKey`, `shortId`, `sni` | Xray credentials                         |
-| `createdAt`, `readyAt`, `error`                     | bookkeeping                              |
+| Field                                               | Meaning                                   |
+| --------------------------------------------------- | ----------------------------------------- |
+| `id`                                                | linode instance id                        |
+| `region`, `regionLabel`                             | `jp-tyo-3` / Tokyo etc.                   |
+| `ip`                                                | reported by callback (or linode fallback) |
+| `state`                                             | `provisioning` \| `ready` \| `failed`     |
+| `chatId`, `messageId`                               | where the status message lives            |
+| `secret`                                            | one-time callback token                   |
+| `uuid`, `privateKey`, `publicKey`, `shortId`, `sni` | Xray credentials                          |
+| `createdAt`, `readyAt`, `error`                     | bookkeeping                               |
 
 The `secret` index exists so the callback can authenticate without exposing the
 instance id.
@@ -123,10 +123,10 @@ is intentionally not remotely administrable by default.
 
 ## Failure modes
 
-| Symptom                           | Likely cause                                | Fix                                                      |
-| --------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
-| Vultr 403 on `/up`                | API token lacks permissions / account limit | Re-issue token with instance read+write                  |
-| 4xx "plan not available"          | `PLAN` not offered in that region           | Change `PLAN` in `wrangler.toml`                         |
-| No callback, failure after 15 min | Bootstrap script aborted                    | Vultr console → instance → view `/var/log/vpn-setup.log` |
-| Link answers but no traffic       | REALITY SNI blocked or IP burned            | `/up` a new region, destroy old                          |
-| `webhook` returns 403             | `WEBHOOK_SECRET` mismatch with `setWebhook` | Re-run `scripts/set-webhook.mjs` with the same secret    |
+| Symptom                           | Likely cause                                | Fix                                                   |
+| --------------------------------- | ------------------------------------------- | ----------------------------------------------------- |
+| linode 401/403 on `/up`           | api token scopes / account limit            | Re-issue token with read/write scopes                 |
+| 4xx "type not available"          | `TYPE` not offered in that region           | Change `TYPE` in `wrangler.toml`                      |
+| No callback, failure after 15 min | Bootstrap script aborted                    | linode lish console → view `/var/log/vpn-setup.log`   |
+| Link answers but no traffic       | REALITY SNI blocked or IP burned            | `/up` a new region, destroy old                       |
+| `webhook` returns 403             | `WEBHOOK_SECRET` mismatch with `setWebhook` | Re-run `scripts/set-webhook.mjs` with the same secret |
