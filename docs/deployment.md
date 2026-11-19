@@ -31,7 +31,7 @@ bunx wrangler login
 
 ```sh
 cp wrangler.toml.example wrangler.toml
-bunx wrangler kv namespace create <kv-name>
+bunx wrangler kv namespace create KV
 ```
 
 Copy the printed `id` into `wrangler.toml`. The binding name stays `KV`; the code

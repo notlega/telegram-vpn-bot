@@ -40,7 +40,7 @@ paste the printed id into the file.
 
 ```sh
 cp wrangler.toml.example wrangler.toml
-bunx wrangler kv namespace create <kv-name>
+bunx wrangler kv namespace create KV
 ```
 
 Copy the env example, fill in the four values, and push them to Cloudflare.
