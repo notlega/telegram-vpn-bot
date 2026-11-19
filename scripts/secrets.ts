@@ -6,7 +6,7 @@
  * Uses the project-local wrangler from node_modules (installed by `bun install`)
  */
 
-const SECRETS = ["BOT_TOKEN", "VULTR_API_TOKEN", "ALLOWED_USER_ID", "WEBHOOK_SECRET"] as const;
+const SECRETS = ["BOT_TOKEN", "LINODE_API_TOKEN", "ALLOWED_USER_ID", "WEBHOOK_SECRET"] as const;
 
 const wrangler = new URL("../node_modules/.bin/wrangler", import.meta.url).pathname;
 const wranglerExists = await Bun.file(wrangler).exists();

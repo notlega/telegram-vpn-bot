@@ -84,7 +84,7 @@ export function failedMessage(record: InstanceRecord, reason: string): string {
  * renders one line of the `/status` list
  *
  * @param record — tracked instance
- * @param liveState — optional live power state from the Vultr API
+ * @param liveState — optional live status from the linode api
  * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready/running`
  */
 export function instanceLine(record: InstanceRecord, liveState?: string): string {

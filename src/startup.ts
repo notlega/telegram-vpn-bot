@@ -1,9 +1,9 @@
 /**
- * provisions a fresh Vultr instance entirely from user-data (cloud-init)
+ * provisions a fresh linode instance entirely from user-data (cloud-init)
  *
- * Vultr Alpine images ship without cloud-init, so the bot targets Debian by
- * default (configurable via OS_NAME). The script installs Xray, wires a
- * systemd unit, turns on BBR and then calls back to the worker
+ * the configured image must support cloud-init or this script never runs. the
+ * default is Debian. The script installs Xray, wires a systemd unit, turns on
+ * BBR and then calls back to the worker
  */
 
 /** credentials and callback details baked into one instance's bootstrap */
@@ -82,7 +82,7 @@ export function buildServerConfig(params: ProvisionParams): string {
  * up to six times so provisioning can finish without SSH
  *
  * @param params — credentials and callback details
- * @returns a POSIX shell script suitable for Vultr `user_data`
+ * @returns a POSIX shell script suitable for linode metadata user data
  * @example
  * const script = buildUserData({ uuid, privateKey, shortId, sni, callbackUrl, secret });
  */
@@ -146,7 +146,7 @@ done
 }
 
 /**
- * base64 encodes a bootstrap script the way Vultr's `user_data` field expects
+ * base64 encodes a bootstrap script the way the metadata service expects
  *
  * @param script — plain shell script
  * @returns base64 representation

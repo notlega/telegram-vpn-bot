@@ -1,9 +1,9 @@
 import { type Api, Bot, InlineKeyboard } from "grammy";
 import type { Env, Region } from "./env";
 import { deleteInstanceRecord, getInstance, listInstanceRecords } from "./kv";
+import { destroyInstance, listInstances, ProviderError } from "./linode";
 import { statusMessage } from "./messages";
 import { describeProvisioning, findRegion, parseRegions, provisionServer } from "./provision";
-import { destroyInstance, listInstances, VultrError } from "./vultr";
 
 /**
  * builds the help text
@@ -214,8 +214,8 @@ export function createBot(env: Env, publicUrl: string): Bot {
     await context.answerCallbackQuery("destroying…");
 
     try {
-      await destroyInstance(env.VULTR_API_TOKEN, id).catch((error: unknown) => {
-        if (error instanceof VultrError && error.status === 404) {
+      await destroyInstance(env.LINODE_API_TOKEN, Number(id)).catch((error: unknown) => {
+        if (error instanceof ProviderError && error.status === 404) {
           return;
         }
 
@@ -245,8 +245,8 @@ export function createBot(env: Env, publicUrl: string): Bot {
     const live = new Map<string, string>();
 
     try {
-      for (const instance of await listInstances(env.VULTR_API_TOKEN)) {
-        live.set(instance.id, instance.power_status);
+      for (const instance of await listInstances(env.LINODE_API_TOKEN)) {
+        live.set(String(instance.id), instance.status);
       }
     } catch (error) {
       console.warn("live instance fetch failed, showing cached state", error);

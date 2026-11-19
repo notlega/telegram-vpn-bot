@@ -20,9 +20,9 @@ id = "REPLACE_WITH_KV_NAMESPACE_ID"
 
 [vars]
 SNI = "www.yahoo.com"
-REGIONS = "icn:Seoul,nrt:Tokyo,sgp:Singapore"
-PLAN = "vc2-1c-1g"
-OS_NAME = "Debian"
+REGIONS = "jp-tyo-3:Tokyo,jp-osa:Osaka,sg-sin-2:Singapore"
+TYPE = "g6-nanode-1"
+IMAGE = "linode/debian13"
 
 [[durable_objects.bindings]]
 name = "GATEKEEPER"

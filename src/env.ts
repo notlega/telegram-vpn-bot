@@ -14,8 +14,8 @@ export interface Env {
   /** Telegram bot token issued by @BotFather. Secret */
   BOT_TOKEN: string;
 
-  /** Vultr API v2 token with instance and IPv4 read/write access. Secret */
-  VULTR_API_TOKEN: string;
+  /** linode api token with read/write access. Secret */
+  LINODE_API_TOKEN: string;
 
   /** optional comma separated Telegram user ids allowed to control the bot. secret */
   ALLOWED_USER_ID?: string;
@@ -26,11 +26,11 @@ export interface Env {
   /** `id:label` pairs offered in the `/up` menu, for example `icn:Seoul,nrt:Tokyo` */
   REGIONS: string;
 
-  /** Vultr plan id used for new instances */
-  PLAN: string;
+  /** linode plan id used for new instances, for example `g6-nanode-1` */
+  TYPE: string;
 
-  /** OS family prefix resolved to the newest matching x64 image, for example `Debian` */
-  OS_NAME: string;
+  /** linode image id, must support cloud-init, for example `linode/debian13` */
+  IMAGE: string;
 
   /** when set, webhook requests must carry this `X-Telegram-Bot-Api-Secret-Token` */
   WEBHOOK_SECRET?: string;
@@ -40,15 +40,15 @@ export interface Env {
 export type InstanceState = "provisioning" | "ready" | "failed";
 
 /**
- * everything the bot needs to remember about one Vultr instance. Stored in KV
+ * everything the bot needs to remember about one linode instance. Stored in KV
  * under `inst:<id>`; the `secret` field is additionally indexed as
  * `secret:<secret>` so the bootstrap callback can authenticate itself
  */
 export interface InstanceRecord {
-  /** Vultr instance id (SUBID) */
+  /** linode instance id */
   id: string;
 
-  /** Vultr region id the instance was created in, for example `icn` */
+  /** linode region id the instance was created in, for example `jp-tyo-3` */
   region: string;
 
   /** human readable region name used in chat messages */
@@ -96,7 +96,7 @@ export interface InstanceRecord {
 
 /** A region button offered in the `/up` menu */
 export interface Region {
-  /** Vultr region id, for example `icn` */
+  /** linode region id, for example `jp-tyo-3` */
   id: string;
 
   /** display name shown on the inline keyboard */

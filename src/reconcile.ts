@@ -1,9 +1,9 @@
 import { type Api, Bot, InputFile } from "grammy";
 import type { Env, InstanceRecord } from "./env";
 import { getInstanceBySecret, listInstanceRecords, saveInstance } from "./kv";
+import { getInstance } from "./linode";
 import { failedMessage, readyMessage, recordLink } from "./messages";
 import { qrPng } from "./qr";
-import { getInstance } from "./vultr";
 
 /** publish without waiting for the callback once an instance has run this long */
 const READY_FALLBACK_MS = 8 * 60_000;
@@ -131,25 +131,25 @@ export async function reconcile(env: Env): Promise<void> {
     let instance = null;
 
     try {
-      instance = await getInstance(env.VULTR_API_TOKEN, record.id);
+      instance = await getInstance(env.LINODE_API_TOKEN, Number(record.id));
     } catch (error) {
-      console.error("reconcile: vultr lookup failed", error);
+      console.error("reconcile: linode lookup failed", error);
     }
 
     if (!instance) {
-      await markFailed(env, record, "instance vanished from Vultr");
+      await markFailed(env, record, "instance vanished from linode");
       continue;
     }
 
-    const ip = instance.main_ip && instance.main_ip !== "0.0.0.0" ? instance.main_ip : record.ip;
+    const ip = instance.ipv4[0] ?? record.ip;
 
-    if (instance.power_status === "running" && ip !== "pending" && age > READY_FALLBACK_MS) {
+    if (instance.status === "running" && ip !== "pending" && age > READY_FALLBACK_MS) {
       const updated: InstanceRecord = { ...record, ip, state: "ready", readyAt: Date.now() };
       await saveInstance(env.KV, updated);
       await publishReady(
         env,
         updated,
-        "note: bootstrap callback was not received; link uses the Vultr ip",
+        "note: bootstrap callback was not received; link uses the linode ip",
       ).catch((error) => console.error("publishReady fallback failed", error));
       continue;
     }

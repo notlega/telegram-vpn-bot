@@ -1,16 +1,14 @@
 import type { Env, InstanceRecord, Region } from "./env";
 import { generateRealityKeyPair, generateShortId, generateUuid, randomHex } from "./keys";
 import { saveInstance } from "./kv";
-import { buildUserData, encodeUserData } from "./startup";
 import {
   createInstance,
-  listOs,
-  listPlans,
-  pickOs,
-  pickPlan,
-  VultrError,
-  type VultrInstance,
-} from "./vultr";
+  type LinodeInstance,
+  listImages,
+  ProviderError,
+  pickImage,
+} from "./linode";
+import { buildUserData, encodeUserData } from "./startup";
 
 /**
  * parses the `REGIONS` configuration string into region options
@@ -32,7 +30,7 @@ export function parseRegions(env: Env): Region[] {
  * finds a region by id
  *
  * @param env — worker bindings
- * @param id — Vultr region id such as `icn`
+ * @param id — linode region id such as `jp-tyo-3`
  * @returns the region, or `undefined` when not configured
  */
 export function findRegion(env: Env, id: string): Region | undefined {
@@ -40,10 +38,10 @@ export function findRegion(env: Env, id: string): Region | undefined {
 }
 
 /**
- * creates a Vultr instance and registers it for reconciliation
+ * creates a linode instance and registers it for reconciliation
  *
- * Generates a fresh key pair, UUID and short id, resolves the OS image and plan
- * from the live Vultr catalogs, then submits the bootstrap script as user-data
+ * Generates a fresh key pair, uuid and short id, confirms the configured image
+ * supports cloud-init, then submits the bootstrap script as user data
  *
  * @param env — worker bindings
  * @param publicUrl — origin of the deployed worker, used to build the callback
@@ -51,8 +49,8 @@ export function findRegion(env: Env, id: string): Region | undefined {
  * @param messageId — status message the bot edits when the server is ready
  * @param region — region selected by the operator
  * @returns the newly stored instance record
- * @throws {Error} when the OS family or plan cannot be resolved, or Vultr
- *   refuses the request
+ * @throws {Error} when the image is unknown or lacks cloud-init support, or
+ *   linode refuses the request
  */
 export async function provisionServer(
   env: Env,
@@ -61,21 +59,15 @@ export async function provisionServer(
   messageId: number,
   region: Region,
 ): Promise<InstanceRecord> {
-  const [osList, planList] = await Promise.all([
-    listOs(env.VULTR_API_TOKEN),
-    listPlans(env.VULTR_API_TOKEN),
-  ]);
+  const images = await listImages(env.LINODE_API_TOKEN);
+  const image = pickImage(images, env.IMAGE);
 
-  const os = pickOs(osList, env.OS_NAME);
-
-  if (!os) {
-    throw new Error(`no OS matching "${env.OS_NAME}" (x64) on Vultr`);
+  if (!image) {
+    throw new Error(`image "${env.IMAGE}" not found on linode`);
   }
 
-  const plan = pickPlan(planList, env.PLAN);
-
-  if (!plan) {
-    throw new Error(`plan "${env.PLAN}" not found on Vultr`);
+  if (!image.capabilities.includes("cloud-init")) {
+    throw new Error(`image "${env.IMAGE}" has no cloud-init support, user data would not run`);
   }
 
   const keys = await generateRealityKeyPair();
@@ -92,33 +84,30 @@ export async function provisionServer(
     secret,
   });
 
-  let instance: VultrInstance;
+  let instance: LinodeInstance;
 
   try {
-    instance = await createInstance(env.VULTR_API_TOKEN, {
+    instance = await createInstance(env.LINODE_API_TOKEN, {
       region: region.id,
-      plan: plan.id,
-      os_id: os.id,
+      type: env.TYPE,
+      image: env.IMAGE,
       label: `vpn-${region.id}-${shortId}`,
-      hostname: `vpn-${region.id}-${shortId}`,
-      user_data: encodeUserData(userData),
-      backups: "disabled",
+      root_pass: randomHex(24),
+      metadata: { user_data: encodeUserData(userData) },
     });
   } catch (error) {
-    if (error instanceof VultrError && error.status === 403) {
-      throw new Error(
-        "Vultr refused the request (403) — check the API token permissions and account limits",
-      );
+    if (error instanceof ProviderError && (error.status === 401 || error.status === 403)) {
+      throw new Error("linode refused the request, check the api token scopes and account limits");
     }
 
     throw error;
   }
 
   const record: InstanceRecord = {
-    id: instance.id,
+    id: String(instance.id),
     region: region.id,
     regionLabel: region.label,
-    ip: instance.main_ip && instance.main_ip !== "0.0.0.0" ? instance.main_ip : "pending",
+    ip: instance.ipv4[0] ?? "pending",
     state: "provisioning",
     chatId,
     messageId,
@@ -132,6 +121,7 @@ export async function provisionServer(
   };
 
   await saveInstance(env.KV, record);
+
   return record;
 }
 

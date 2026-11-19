@@ -9,7 +9,7 @@ const SECRET_PREFIX = "secret:";
 /**
  * builds the KV key for one instance record
  *
- * @param id — Vultr instance id
+ * @param id — linode instance id
  * @returns key in the form `inst:<id>`
  */
 function instanceKey(id: string): string {
@@ -43,7 +43,7 @@ export async function saveInstance(kv: KVNamespace, record: InstanceRecord): Pro
  * reads an instance record
  *
  * @param kv — KV binding
- * @param id — Vultr instance id
+ * @param id — linode instance id
  * @returns the record, or `null` when unknown
  */
 export async function getInstance(kv: KVNamespace, id: string): Promise<InstanceRecord | null> {
