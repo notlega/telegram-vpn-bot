@@ -30,10 +30,12 @@ bunx wrangler login
 ## 3. Create the KV namespace
 
 ```sh
-bunx wrangler kv namespace create KV
+cp wrangler.toml.example wrangler.toml
+bunx wrangler kv namespace create <kv-name>
 ```
 
-Copy the printed `id` into `wrangler.toml`:
+Copy the printed `id` into `wrangler.toml`. The binding name stays `KV`; the code
+and local test commands reference it.
 
 ```toml
 [[kv_namespaces]]

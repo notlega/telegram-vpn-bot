@@ -35,10 +35,12 @@ bun install
 bunx wrangler login
 ```
 
-Create the KV namespace, then paste the printed id into `wrangler.toml`.
+Copy the wrangler example to `wrangler.toml`, create the KV namespace, then
+paste the printed id into the file.
 
 ```sh
-bunx wrangler kv namespace create KV
+cp wrangler.toml.example wrangler.toml
+bunx wrangler kv namespace create <kv-name>
 ```
 
 Copy the env example, fill in the four values, and push them to Cloudflare.

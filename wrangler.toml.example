@@ -1,3 +1,7 @@
+# copy this file to wrangler.toml and fill in the kv namespace id
+# the binding name stays "KV": the code (env.KV) and the local test
+# commands in the readme reference it
+
 name = "telegram-vpn-bot"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"

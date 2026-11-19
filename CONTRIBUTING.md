@@ -7,6 +7,7 @@ thanks for looking at the project. it is a small codebase, keep changes focused.
 ```sh
 bun install
 cp .env.example .env
+cp wrangler.toml.example wrangler.toml
 bunx wrangler login
 ```
 
