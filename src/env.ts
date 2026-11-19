@@ -17,8 +17,8 @@ export interface Env {
   /** Vultr API v2 token with instance and IPv4 read/write access. Secret */
   VULTR_API_TOKEN: string;
 
-  /** comma separated Telegram user ids allowed to control the bot. Secret */
-  ALLOWED_USER_ID: string;
+  /** optional comma separated Telegram user ids allowed to control the bot. secret */
+  ALLOWED_USER_ID?: string;
 
   /** REALITY camouflage host. Its TLS handshake is what an unauthenticated peer sees */
   SNI: string;

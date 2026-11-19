@@ -5,16 +5,28 @@ import { statusMessage } from "./messages";
 import { describeProvisioning, findRegion, parseRegions, provisionServer } from "./provision";
 import { destroyInstance, listInstances, VultrError } from "./vultr";
 
-const WELCOME = [
-  "telegram-vpn-bot",
-  "",
-  "/up — create a VLESS + REALITY server",
-  "/down — destroy a server",
-  "/status — list tracked servers",
-  "/id — show your Telegram id",
-  "",
-  "only allowlisted users can control the vpn servers",
-].join("\n");
+/**
+ * builds the help text
+ *
+ * @param restricted — true when an allowlist is configured
+ * @returns plain text shown by /start and /help
+ */
+function welcomeText(restricted: boolean): string {
+  const lines = [
+    "telegram-vpn-bot",
+    "",
+    "/up — create a VLESS + REALITY server",
+    "/down — destroy a server",
+    "/status — list tracked servers",
+    "/id — show your Telegram id",
+  ];
+
+  if (restricted) {
+    lines.push("", "only allowlisted users can control the vpn servers");
+  }
+
+  return lines.join("\n");
+}
 
 /**
  * extracts a human readable message from an unknown thrown value
@@ -57,8 +69,10 @@ async function startProvision(
 }
 
 /**
- * builds the bot: allowlist middleware, command handlers, callback handlers and
- * the error boundary. Stateless — one instance is created per webhook request
+ * builds the bot: optional allowlist middleware, command handlers, callback
+ * handlers and the error boundary. Stateless — one instance is created per
+ * webhook request. access control is opt-in: set ALLOWED_USER_ID to restrict,
+ * leave it empty for an open bot
  *
  * @param env — worker bindings
  * @param publicUrl — worker origin used when provisioning new servers
@@ -67,12 +81,19 @@ async function startProvision(
 export function createBot(env: Env, publicUrl: string): Bot {
   const bot = new Bot(env.BOT_TOKEN);
   const allowed = new Set(
-    env.ALLOWED_USER_ID.split(",")
+    (env.ALLOWED_USER_ID ?? "")
+      .split(",")
       .map((value) => value.trim())
       .filter(Boolean),
   );
+  const restricted = allowed.size > 0;
 
   bot.use(async (context, next) => {
+    if (!restricted) {
+      await next();
+      return;
+    }
+
     const userId = context.from?.id;
 
     if (userId !== undefined && allowed.has(String(userId))) {
@@ -90,8 +111,10 @@ export function createBot(env: Env, publicUrl: string): Bot {
     console.warn(`unauthorized update from ${userId}: ${verdict}`);
   });
 
-  bot.command("start", (context) => context.reply(WELCOME));
-  bot.command("help", (context) => context.reply(WELCOME));
+  const welcome = welcomeText(restricted);
+
+  bot.command("start", (context) => context.reply(welcome));
+  bot.command("help", (context) => context.reply(welcome));
   bot.command("id", (context) => context.reply(`your Telegram id: ${context.from?.id}`));
 
   bot.command("up", async (context) => {
