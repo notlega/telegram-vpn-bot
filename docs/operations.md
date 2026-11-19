@@ -46,16 +46,17 @@ promptly, and use `/status` as the inventory.
 
 ## Troubleshooting
 
-| Symptom                          | Check                                                         | Fix                                                              |
-| -------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `/up` replies with a Vultr error | Vultr console → Account → API                                 | Token needs Instances + IPv4 read/write                          |
-| "plan not found"                 | `PLAN` in `wrangler.toml`                                     | Pick a plan id available in that region                          |
-| No link after 3 min              | `/status` state                                               | Wait for the 8-minute cron fallback                              |
-| Failed after 15 min              | Vultr console → instance → `/var/log/vpn-setup.log`           | Look for `apt-get` or `curl` failures (transient mirror/network) |
-| Link imported, no traffic        | Client log, then `curl -x http://127.0.0.1:10808 ifconfig.me` | If empty, likely blocked IP → `/up` new server                   |
-| Bot silent                       | `bunx wrangler tail`                                          | Webhook secret mismatch → re-run `bun run set-webhook`           |
-| Webhook 403                      | `WEBHOOK_SECRET` vs Telegram registration                     | Re-register with the same secret                                 |
-| Slow throughput                  | `mtr -T -P 443 -n -r -c 5 <server ip>`                        | Vultr routes are congestion-prone; try another region            |
+| Symptom                                 | Check                                                         | Fix                                                                                                                 |
+| --------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/up` replies with a Vultr error        | Vultr console → Account → API                                 | Token needs Instances + IPv4 read/write                                                                             |
+| "plan not found"                        | `PLAN` in `wrangler.toml`                                     | Pick a plan id available in that region                                                                             |
+| Vultr error body is an nginx html `403` | check the request user-agent and the API ip allowlist         | the worker sends `telegram-vpn-bot/1.0`; clear Vultr's API access-control ip list, workers egress from rotating ips |
+| No link after 3 min                     | `/status` state                                               | Wait for the 8-minute cron fallback                                                                                 |
+| Failed after 15 min                     | Vultr console → instance → `/var/log/vpn-setup.log`           | Look for `apt-get` or `curl` failures (transient mirror/network)                                                    |
+| Link imported, no traffic               | Client log, then `curl -x http://127.0.0.1:10808 ifconfig.me` | If empty, likely blocked IP → `/up` new server                                                                      |
+| Bot silent                              | `bunx wrangler tail`                                          | Webhook secret mismatch → re-run `bun run set-webhook`                                                              |
+| Webhook 403                             | `WEBHOOK_SECRET` vs Telegram registration                     | Re-register with the same secret                                                                                    |
+| Slow throughput                         | `mtr -T -P 443 -n -r -c 5 <server ip>`                        | Vultr routes are congestion-prone; try another region                                                               |
 
 ## Inspecting a provisioned server
 
