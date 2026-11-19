@@ -121,6 +121,7 @@ async function request<T>(token: string, path: string, init: RequestInit = {}): 
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "User-Agent": "telegram-vpn-bot/1.0",
       ...(init.headers ?? {}),
     },
   });
