@@ -43,7 +43,8 @@ cp wrangler.toml.example wrangler.toml
 bunx wrangler kv namespace create KV
 ```
 
-Copy the env example, fill in the four values, and push them to Cloudflare.
+Copy the env example, fill in the values, and push them to Cloudflare. the user
+id is only needed when you want an allowlist.
 
 ```sh
 cp .env.example .env

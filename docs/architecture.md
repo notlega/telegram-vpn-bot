@@ -107,11 +107,13 @@ is intentionally not remotely administrable by default.
 
 ## Security model
 
-- Every update is checked against `ALLOWED_USER_ID` before any handler runs.
-- Unauthorized senders are ignored silently. The first message records a strike,
-  the second within an hour sets a 24 hour block. state lives in one durable
-  object per user id (`GATEKEEPER` binding), so counters are strongly consistent
-  and cost no KV writes; allowed users never touch it.
+- Access control is opt-in. with `ALLOWED_USER_ID` set, every update is checked
+  before any handler runs. with it empty, the bot is open and the gatekeeper is
+  never called.
+- When restricted, unauthorized senders are ignored silently. The first message
+  records a strike, the second within an hour sets a 24 hour block. state lives
+  in one durable object per user id (`GATEKEEPER` binding), so counters are
+  strongly consistent and cost no KV writes; allowed users never touch it.
 - Telegram sends `X-Telegram-Bot-Api-Secret-Token`; the worker rejects
   mismatches.
 - Callback tokens are 48 hex characters, random per instance, single use, and

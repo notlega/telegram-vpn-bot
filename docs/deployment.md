@@ -4,12 +4,12 @@ Zero → live in about ten minutes.
 
 ## 1. Prerequisites
 
-| Item                           | Where                                                      |
-| ------------------------------ | ---------------------------------------------------------- |
-| Cloudflare account (free plan) | dash.cloudflare.com                                        |
-| Vultr account + API token      | Vultr → Account → API (enable IPv4 + Instances read/write) |
-| Telegram bot token             | [@BotFather](https://t.me/BotFather) → `/newbot`           |
-| Telegram user id               | [@userinfobot](https://t.me/userinfobot)                   |
+| Item                           | Where                                                        |
+| ------------------------------ | ------------------------------------------------------------ |
+| Cloudflare account (free plan) | dash.cloudflare.com                                          |
+| Vultr account + API token      | Vultr → Account → API (enable IPv4 + Instances read/write)   |
+| Telegram bot token             | [@BotFather](https://t.me/BotFather) → `/newbot`             |
+| Telegram user id (optional)    | [@userinfobot](https://t.me/userinfobot), for access control |
 
 The API token is only used server-side, inside the worker. Do not paste it into
 chat.
@@ -58,8 +58,9 @@ ALLOWED_USER_ID=123456789
 WEBHOOK_SECRET=any-long-random-string
 ```
 
-`ALLOWED_USER_ID` accepts a comma-separated list. `WEBHOOK_SECRET` can be
-generated with `openssl rand -hex 32`.
+`ALLOWED_USER_ID` is optional and accepts a comma-separated list. leave it empty
+for an open bot. botfather has no per-user restriction setting, so this value is
+the only allowlist. `WEBHOOK_SECRET` can be generated with `openssl rand -hex 32`.
 
 Push every value to the worker in one step:
 
@@ -122,14 +123,26 @@ If step 4 fails, open the instance in the Vultr console and read
 
 ## Updates
 
+A redeploy updates the existing worker in place: same url, same bindings, new
+version. It does not create a second worker.
+
 ```sh
 git pull
 bun install
+bun run check
 bun run deploy
 ```
 
 Secret rotation: edit `.env`, then `bun run secrets` again. Re-run
 `bun run set-webhook` only if `WEBHOOK_SECRET` changed.
+
+Roll back to the previous version when an update breaks something:
+
+```sh
+bunx wrangler deployments list
+bunx wrangler rollback
+bunx wrangler tail
+```
 
 ## Removing the deployment
 
@@ -137,6 +150,17 @@ Secret rotation: edit `.env`, then `bun run secrets` again. Re-run
 bun run set-webhook -- --delete
 bunx wrangler delete
 bunx wrangler kv namespace delete --namespace-id <id>
+```
+
+Dead config left behind over time: list and delete extra secrets and unused kv
+namespaces, and remove old workers by name.
+
+```sh
+bunx wrangler secret list
+bunx wrangler secret delete NAME
+bunx wrangler kv namespace list
+bunx wrangler kv namespace delete --namespace-id <id>
+wrangler delete --name <old-worker>
 ```
 
 Destroy all Vultr instances first with `/down`; deleting the worker leaves any
