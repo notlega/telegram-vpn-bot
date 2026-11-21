@@ -197,8 +197,8 @@ export function createBot(env: Env, publicUrl: string): Bot {
   bot.callbackQuery(/^restart:(.+)$/, async (context) => {
     const record = await getInstance(env.KV, context.match[1] ?? "");
 
-    if (!record) {
-      await context.answerCallbackQuery("server is gone.");
+    if (record?.state !== "ready") {
+      await context.answerCallbackQuery("server is not running.");
       return;
     }
 
