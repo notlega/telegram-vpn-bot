@@ -8,12 +8,17 @@ out, fresh credentials per server, no always-on process to babysit.
 
 ## What it does
 
-- `/up`: choose a region (Tokyo / Osaka / Singapore). The bot creates a linode
-  instance, waits for it to bootstrap Xray, then posts an importable
+- `/create`: choose a region (Tokyo / Osaka / Singapore). The bot creates a
+  linode instance, waits for it to bootstrap Xray, then posts an importable
   `vless://` link and a QR code.
-- `/down`: destroy a tracked instance (two-step confirmation).
+- `/restart`: reboots a server. disk, ip and credentials stay, and
+  the link keeps working after reboot.
+- `/destroy`: destroy a tracked instance for good (two-step confirmation).
 - `/status`: tracked servers with age and live power state.
 - `/id`: print your Telegram id (setup helper).
+
+Commands are slash-only: the bot registers no text matchers, so plain chat text
+never reaches a handler.
 
 Every server gets a new X25519 key pair, UUID and short id, generated with
 WebCrypto inside the worker. Workers KV holds the registry; each share link is
@@ -27,14 +32,16 @@ flowchart LR
     w -- REST --> v[Linode API]
     v -- boots --> vps["VPS · user-data installs Xray, systemd unit, BBR"]
     vps -- "GET /ready?token=…" --> w
-    cron["cron (* * * * *)"] -- reconcile provisioning records, publish links --> w
+    cron["cron (*/2 * * * *)"] -- reconcile provisioning records, publish links --> w
     w <---> kv[(Workers KV)]
 ```
 
-State lives in Workers KV (`inst:<id>`, `secret:<token>`). A cloud-init script
-calls `/ready` with a per-instance token, and cron reconciles when that callback
-is lost. Eight minutes after create, a running instance is published with its
-linode ip and a warning. Provisioning records fail after 15 minutes.
+State lives in Workers KV (`inst:<id>`, `secret:<token>`, plus a `pending` index
+and a short-lived image cache). A cloud-init script calls `/ready` with a
+per-instance token, and cron reconciles when that callback is lost. Eight
+minutes after create, a running instance is published with its linode ip and a
+warning. Provisioning records fail after 15 minutes. `/restart` restarts the instance;
+`/destroy` removes it.
 
 ## Documentation
 
@@ -105,18 +112,18 @@ bun run set-webhook -- <workers-url>
 
 ### 6. Use it
 
-Open the bot, `/id` to double check the allowlist, then `/up`.
+Open the bot, `/id` to double check the allowlist, then `/create`.
 
 ## Configuration
 
 `wrangler.toml`:
 
-| Var       | Meaning                                                                    |
-| --------- | -------------------------------------------------------------------------- |
-| `REGIONS` | `id:label` pairs offered in the `/up` menu (`jp-tyo-3:Tokyo,jp-osa:Osaka`) |
-| `TYPE`    | linode plan id, default `g6-nanode-1` (~$5/mo)                             |
-| `IMAGE`   | linode image id, must support cloud-init, default `linode/debian13`        |
-| `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                    |
+| Var       | Meaning                                                                        |
+| --------- | ------------------------------------------------------------------------------ |
+| `REGIONS` | `id:label` pairs offered in the `/create` menu (`jp-tyo-3:Tokyo,jp-osa:Osaka`) |
+| `TYPE`    | linode plan id, default `g6-nanode-1` (~$5/mo)                                 |
+| `IMAGE`   | linode image id, must support cloud-init, default `linode/debian13`            |
+| `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                        |
 
 `IMAGE` must support cloud-init, otherwise the bootstrap user data never runs.
 the bot checks the image capabilities and refuses images without it, which rules

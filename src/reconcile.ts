@@ -1,7 +1,7 @@
 import { type Api, Bot, InputFile } from "grammy";
 import type { Env, InstanceRecord } from "./env";
-import { getInstanceBySecret, listInstanceRecords, saveInstance } from "./kv";
-import { getInstance } from "./linode";
+import { getInstance, getInstanceBySecret, listPendingIds, saveInstance } from "./kv";
+import { getInstance as getLinodeInstance } from "./linode";
 import { failedMessage, readyMessage, recordLink } from "./messages";
 import { qrPng } from "./qr";
 
@@ -54,9 +54,9 @@ export async function publishReady(env: Env, record: InstanceRecord, note?: stri
 /**
  * handles the cloud-init completion callback `GET /ready?token=…&ip=…`
  *
- * Resolves the record through the token index, stores the reported IP, flips
- * the state to `ready` and publishes the link. Idempotent: repeated callbacks
- * return `already ready`
+ * resolves the record through the token index, stores the reported IP, flips
+ * the state to `ready` and publishes the link. Saving in any state other than
+ * `provisioning` burns the token, so a repeated callback returns `unknown token`
  *
  * @param env — worker bindings
  * @param request — incoming callback request
@@ -111,27 +111,39 @@ async function markFailed(env: Env, record: InstanceRecord, reason: string): Pro
 /**
  * cron entry point: advances every record still in `provisioning`
  *
- * Publishes records whose instance is running past the fallback window, fails
- * records whose instance disappeared, and times out records older than 15
- * minutes. Does nothing when no record is provisioning
+ * reads the provisioning index first, so a tick with nothing pending costs one
+ * KV read. Publishes records whose instance is running past the fallback
+ * window, fails records whose instance disappeared, and times out records older
+ * than 15 minutes
  *
  * @param env — worker bindings
  */
 export async function reconcile(env: Env): Promise<void> {
-  const records = await listInstanceRecords(env.KV);
-  const pending = records.filter((record) => record.state === "provisioning");
+  const ids = await listPendingIds(env.KV);
 
-  if (pending.length === 0) {
+  if (ids.length === 0) {
     return;
   }
 
-  for (const record of pending) {
+  const records: InstanceRecord[] = [];
+
+  for (const id of ids) {
+    const record = await getInstance(env.KV, id);
+
+    if (record && record.state === "provisioning") {
+      records.push(record);
+    }
+  }
+
+  records.sort((a, b) => a.createdAt - b.createdAt);
+
+  for (const record of records) {
     const age = Date.now() - record.createdAt;
 
     let instance = null;
 
     try {
-      instance = await getInstance(env.LINODE_API_TOKEN, Number(record.id));
+      instance = await getLinodeInstance(env.LINODE_API_TOKEN, Number(record.id));
     } catch (error) {
       console.error("reconcile: linode lookup failed", error);
     }

@@ -23,7 +23,7 @@ export interface Env {
   /** REALITY camouflage host. Its TLS handshake is what an unauthenticated peer sees */
   SNI: string;
 
-  /** `id:label` pairs offered in the `/up` menu, for example `icn:Seoul,nrt:Tokyo` */
+  /** `id:label` pairs offered in the `/create` menu, for example `icn:Seoul,nrt:Tokyo` */
   REGIONS: string;
 
   /** linode plan id used for new instances, for example `g6-nanode-1` */
@@ -94,7 +94,7 @@ export interface InstanceRecord {
   error?: string;
 }
 
-/** A region button offered in the `/up` menu */
+/** A region button offered in the `/create` menu */
 export interface Region {
   /** linode region id, for example `jp-tyo-3` */
   id: string;

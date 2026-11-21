@@ -6,6 +6,9 @@ const INSTANCE_PREFIX = "inst:";
 /** KV key prefix for the callback-token index */
 const SECRET_PREFIX = "secret:";
 
+/** KV key holding the ids of records still provisioning */
+const PENDING_KEY = "pending";
+
 /**
  * builds the KV key for one instance record
  *
@@ -27,16 +30,59 @@ function secretKey(secret: string): string {
 }
 
 /**
+ * reads the ids of records still provisioning
+ *
+ * @param kv — KV binding
+ * @returns ids in insertion order; empty when nothing is provisioning
+ */
+async function readPending(kv: KVNamespace): Promise<string[]> {
+  return (await kv.get<string[]>(PENDING_KEY, "json")) ?? [];
+}
+
+/**
+ * writes the provisioning index, deleting the key when the list empties
+ *
+ * @param kv — KV binding
+ * @param ids — ids still provisioning
+ */
+async function writePending(kv: KVNamespace, ids: string[]): Promise<void> {
+  if (ids.length === 0) {
+    await kv.delete(PENDING_KEY);
+    return;
+  }
+
+  await kv.put(PENDING_KEY, JSON.stringify(ids));
+}
+
+/**
  * persists an instance record together with its callback-token index entry
+ *
+ * keeps the provisioning index in sync so cron can skip a full KV list when
+ * nothing is pending. The `secret:<token>` index exists only while the record
+ * is provisioning; every later save deletes it, burning the token
  *
  * @param kv — KV binding
  * @param record — record to write; overwrites any previous copy
  */
 export async function saveInstance(kv: KVNamespace, record: InstanceRecord): Promise<void> {
-  await Promise.all([
-    kv.put(instanceKey(record.id), JSON.stringify(record)),
-    kv.put(secretKey(record.secret), record.id),
-  ]);
+  const pending = await readPending(kv);
+  let next: string[];
+
+  if (record.state === "provisioning") {
+    next = pending.includes(record.id) ? pending : [...pending, record.id];
+  } else {
+    next = pending.filter((id) => id !== record.id);
+  }
+
+  const writes = [kv.put(instanceKey(record.id), JSON.stringify(record)), writePending(kv, next)];
+
+  if (record.state === "provisioning") {
+    writes.push(kv.put(secretKey(record.secret), record.id));
+  } else {
+    writes.push(kv.delete(secretKey(record.secret)));
+  }
+
+  await Promise.all(writes);
 }
 
 /**
@@ -54,8 +100,8 @@ export async function getInstance(kv: KVNamespace, id: string): Promise<Instance
  * looks up an instance by the callback token a bootstrap script presents
  *
  * @param kv — KV binding
- * @param secret — one-time callback token
- * @returns the record, or `null` when the token is unknown
+ * @param secret — callback token, valid only while the record is provisioning
+ * @returns the record, or `null` when the token is unknown or burned
  */
 export async function getInstanceBySecret(
   kv: KVNamespace,
@@ -71,19 +117,39 @@ export async function getInstanceBySecret(
 }
 
 /**
- * removes an instance record and its callback-token index entry
+ * removes an instance record, its callback-token index entry and its
+ * provisioning-index entry
  *
  * @param kv — KV binding
  * @param record — record being destroyed
  */
 export async function deleteInstanceRecord(kv: KVNamespace, record: InstanceRecord): Promise<void> {
-  await Promise.all([kv.delete(instanceKey(record.id)), kv.delete(secretKey(record.secret))]);
+  const pending = await readPending(kv);
+
+  await Promise.all([
+    kv.delete(instanceKey(record.id)),
+    kv.delete(secretKey(record.secret)),
+    writePending(
+      kv,
+      pending.filter((id) => id !== record.id),
+    ),
+  ]);
+}
+
+/**
+ * lists the ids of records still provisioning
+ *
+ * @param kv — KV binding
+ * @returns ids for {@link reconcile}; empty when nothing is pending
+ */
+export async function listPendingIds(kv: KVNamespace): Promise<string[]> {
+  return readPending(kv);
 }
 
 /**
  * lists every tracked instance, oldest first
  *
- * Handles KV pagination internally and skips index entries that no longer have
+ * handles KV pagination internally and skips index entries that no longer have
  * a body
  *
  * @param kv — KV binding

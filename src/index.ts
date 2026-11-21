@@ -7,7 +7,7 @@ import { handleReady, reconcile } from "./reconcile";
 /**
  * worker entry point
  *
- * Routes: `/telegram` (webhook), `/ready` (cloud-init callback) and `/`
+ * routes: `/telegram` (webhook), `/ready` (cloud-init callback) and `/`
  * (health check). The scheduled handler reconciles provisioning records
  */
 export default {

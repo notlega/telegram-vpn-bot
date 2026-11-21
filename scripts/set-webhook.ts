@@ -5,7 +5,7 @@
  *   bun scripts/set-webhook.ts <workers-url>
  *   bun scripts/set-webhook.ts --delete
  *
- * Reads BOT_TOKEN and WEBHOOK_SECRET from .env (bun loads it automatically)
+ * reads BOT_TOKEN and WEBHOOK_SECRET from .env (bun loads it automatically)
  */
 
 interface SetWebhookPayload {
@@ -16,9 +16,28 @@ interface SetWebhookPayload {
   secret_token?: string;
 }
 
+/** one entry in the Telegram command menu */
+interface BotCommand {
+  /** command name without the leading slash */
+  command: string;
+
+  /** menu description */
+  description: string;
+}
+
 type WebhookRequest =
   | { method: "deleteWebhook" }
-  | { method: "setWebhook"; payload: SetWebhookPayload };
+  | { method: "setWebhook"; payload: SetWebhookPayload }
+  | { method: "setMyCommands"; payload: { commands: BotCommand[] } };
+
+/** command menu shown by Telegram clients; mirrors the handlers in src/bot.ts */
+const COMMANDS: BotCommand[] = [
+  { command: "create", description: "create a VLESS + REALITY server" },
+  { command: "restart", description: "reboot a server" },
+  { command: "destroy", description: "destroy a server" },
+  { command: "status", description: "list tracked servers" },
+  { command: "id", description: "show your Telegram id" },
+];
 
 interface TelegramResponse {
   ok: boolean;
@@ -121,6 +140,8 @@ if (secret) {
 }
 
 await call({ method: "setWebhook", payload });
+await call({ method: "setMyCommands", payload: { commands: COMMANDS } });
 console.log(`webhook set: ${endpoint}${secret ? " (secret token enabled)" : ""}`);
+console.log(`command menu set: ${COMMANDS.map((entry) => `/${entry.command}`).join(", ")}`);
 
 export {};

@@ -55,7 +55,7 @@ export function fromBase64Url(value: string): Uint8Array {
 /**
  * generates a fresh X25519 key pair for one server
  *
- * The private half is exported raw when the runtime allows it and falls back to
+ * the private half is exported raw when the runtime allows it and falls back to
  * the trailing 32 bytes of the PKCS#8 encoding otherwise
  *
  * @returns the pair in Xray's base64url format

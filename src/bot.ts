@@ -1,7 +1,7 @@
 import { type Api, Bot, InlineKeyboard } from "grammy";
-import type { Env, Region } from "./env";
+import type { Env, InstanceRecord, Region } from "./env";
 import { deleteInstanceRecord, getInstance, listInstanceRecords } from "./kv";
-import { destroyInstance, listInstances, ProviderError } from "./linode";
+import { destroyInstance, listInstances, ProviderError, rebootInstance } from "./linode";
 import { statusMessage } from "./messages";
 import { describeProvisioning, findRegion, parseRegions, provisionServer } from "./provision";
 
@@ -15,8 +15,9 @@ function welcomeText(restricted: boolean): string {
   const lines = [
     "telegram-vpn-bot",
     "",
-    "/up — create a VLESS + REALITY server",
-    "/down — destroy a server",
+    "/create — create a VLESS + REALITY server",
+    "/restart — reboot a server",
+    "/destroy — destroy a server",
     "/status — list tracked servers",
     "/id — show your Telegram id",
   ];
@@ -36,6 +37,16 @@ function welcomeText(restricted: boolean): string {
  */
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * renders the one-line server label used on inline buttons
+ *
+ * @param record — tracked instance
+ * @returns `region · ip`
+ */
+function serverLabel(record: InstanceRecord): string {
+  return `${record.regionLabel} · ${record.ip}`;
 }
 
 /**
@@ -117,7 +128,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
   bot.command("help", (context) => context.reply(welcome));
   bot.command("id", (context) => context.reply(`your Telegram id: ${context.from?.id}`));
 
-  bot.command("up", async (context) => {
+  bot.command("create", async (context) => {
     const argument = context.match.trim();
 
     if (!argument) {
@@ -128,7 +139,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
           keyboard.row();
         }
 
-        keyboard.text(region.label, `up:${region.id}`);
+        keyboard.text(region.label, `create:${region.id}`);
       });
 
       await context.reply("choose a region:", { reply_markup: keyboard });
@@ -153,10 +164,10 @@ export function createBot(env: Env, publicUrl: string): Bot {
     await startProvision(context.api, env, publicUrl, context.chat.id, region);
   });
 
-  bot.callbackQuery(/^up:(.+)$/, async (context) => {
+  bot.callbackQuery(/^create:(.+)$/, async (context) => {
     const region = findRegion(env, context.match[1] ?? "");
 
-    await context.answerCallbackQuery(region ? `creating ${region.label}…` : "unknown region");
+    await context.answerCallbackQuery(region ? `creating ${region.label}…` : "unknown region.");
 
     if (!region || !context.chat) {
       return;
@@ -165,28 +176,69 @@ export function createBot(env: Env, publicUrl: string): Bot {
     await startProvision(context.api, env, publicUrl, context.chat.id, region);
   });
 
-  bot.command("down", async (context) => {
+  bot.command("restart", async (context) => {
+    const records = await listInstanceRecords(env.KV);
+    const running = records.filter((record) => record.state === "ready");
+
+    if (running.length === 0) {
+      await context.reply("no running servers to restart.");
+      return;
+    }
+
+    const keyboard = new InlineKeyboard();
+
+    for (const record of running) {
+      keyboard.text(serverLabel(record), `restart:${record.id}`).row();
+    }
+
+    await context.reply("restart which server?", { reply_markup: keyboard });
+  });
+
+  bot.callbackQuery(/^restart:(.+)$/, async (context) => {
+    const record = await getInstance(env.KV, context.match[1] ?? "");
+
+    if (!record) {
+      await context.answerCallbackQuery("server is gone.");
+      return;
+    }
+
+    await context.answerCallbackQuery("restarting…");
+
+    try {
+      await rebootInstance(env.LINODE_API_TOKEN, Number(record.id));
+      await context
+        .editMessageText(`🔄 restarting ${serverLabel(record)}, back online in ~1 minute.`)
+        .catch((error) => console.warn("restart notice failed", error));
+    } catch (error) {
+      console.error("restart failed", error);
+      await context
+        .editMessageText(`❌ restart failed: ${errorText(error)}`)
+        .catch((noticeError) => console.warn("restart failure notice failed", noticeError));
+    }
+  });
+
+  bot.command("destroy", async (context) => {
     const records = await listInstanceRecords(env.KV);
 
     if (records.length === 0) {
-      await context.reply("nothing to destroy");
+      await context.reply("nothing to destroy.");
       return;
     }
 
     const keyboard = new InlineKeyboard();
 
     for (const record of records) {
-      keyboard.text(`${record.regionLabel} · ${record.ip}`, `down:${record.id}`).row();
+      keyboard.text(`${serverLabel(record)} · ${record.state}`, `destroy:${record.id}`).row();
     }
 
     await context.reply("destroy which server?", { reply_markup: keyboard });
   });
 
-  bot.callbackQuery(/^down:(.+)$/, async (context) => {
+  bot.callbackQuery(/^destroy:(.+)$/, async (context) => {
     const record = await getInstance(env.KV, context.match[1] ?? "");
 
     if (!record) {
-      await context.answerCallbackQuery("server is gone");
+      await context.answerCallbackQuery("server is gone.");
       return;
     }
 
@@ -196,7 +248,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       .text("Cancel", `cancel:${record.id}`);
 
     await context
-      .editMessageText(`destroy ${record.regionLabel} (${record.ip})?\nthis cannot be undone`, {
+      .editMessageText(`destroy ${serverLabel(record)}?\nthis cannot be undone.`, {
         reply_markup: keyboard,
       })
       .catch((error) => console.warn("destroy confirmation render failed", error));
@@ -207,7 +259,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
     const record = await getInstance(env.KV, id);
 
     if (!record) {
-      await context.answerCallbackQuery("already gone");
+      await context.answerCallbackQuery("already gone.");
       return;
     }
 
@@ -223,7 +275,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       });
       await deleteInstanceRecord(env.KV, record);
       await context
-        .editMessageText(`🗑 destroyed ${record.regionLabel} (${record.ip})`)
+        .editMessageText(`🗑 destroyed ${serverLabel(record)}.`)
         .catch((error) => console.warn("destroyed notice failed", error));
     } catch (error) {
       console.error("destroy failed", error);
@@ -234,9 +286,9 @@ export function createBot(env: Env, publicUrl: string): Bot {
   });
 
   bot.callbackQuery(/^cancel:(.+)$/, async (context) => {
-    await context.answerCallbackQuery("cancelled");
+    await context.answerCallbackQuery("cancelled.");
     await context
-      .editMessageText("cancelled")
+      .editMessageText("cancelled.")
       .catch((error) => console.warn("cancel notice failed", error));
   });
 

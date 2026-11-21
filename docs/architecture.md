@@ -8,7 +8,7 @@ flowchart LR
     w -- REST --> v[Linode API]
     v -- boots --> vps["VPS · user-data installs Xray, systemd unit, BBR"]
     vps -- "GET /ready?token=…" --> w
-    cron["cron (* * * * *)"] -- reconcile provisioning records, publish links --> w
+    cron["cron (*/2 * * * *)"] -- reconcile provisioning records, publish links --> w
     w <---> kv[(Workers KV)]
     w -- strikes/blocks --> gate[(Gatekeeper Durable Object)]
 ```
@@ -18,14 +18,14 @@ The worker has three HTTP routes:
 | Route            | Purpose                                                        |
 | ---------------- | -------------------------------------------------------------- |
 | `POST /telegram` | Telegram webhook, guarded by `X-Telegram-Bot-Api-Secret-Token` |
-| `GET /ready`     | Cloud-init completion callback (`token` + `ip` query params)   |
-| `GET /`          | Health check string                                            |
+| `GET /ready`     | cloud-init completion callback (`token` + `ip` query params)   |
+| `GET /`          | health check string                                            |
 
-Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
+Plus one scheduled handler, `reconcile`, bound to a two-minute cron trigger.
 
 ## Provisioning lifecycle
 
-1. **`/up` pressed.** The worker confirms the configured image supports
+1. **`/create` pressed.** The worker confirms the configured image supports
    cloud-init (`IMAGE`), generates
    credentials, and builds two artifacts:
    - the Xray server config (REALITY inbound on `:443`, VLESS + Vision)
@@ -33,15 +33,27 @@ Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
      sysctls and a callback `curl`
 2. **Instance created.** `POST /v2/instances` carries the bootstrap script as
    base64 `user_data`. The registration is stored in KV as `state=provisioning`
-   together with a one-time `secret`.
+   together with a one-time `secret`, and the id joins the `pending` index.
 3. **Bootstrap.** The fresh Debian box installs `curl`/`unzip`, downloads the
    latest Xray release, starts the service, enables BBR, then calls
    `GET /ready?token=<secret>&ip=<public ip>` up to six times.
 4. **Ready.** The worker resolves the record from `secret:<token>`, stores the
    reported IP, flips the state to `ready`, edits the original chat message with
-   the `vless://` link and sends a QR PNG.
-5. **Cleanup.** `/down` → confirmation → `DELETE /v2/instances/<id>`,
-   both KV keys removed.
+   the `vless://` link and sends a QR PNG. the token index is deleted on that
+   save, so the callback works once.
+5. **Restart, cleanup.** `/restart` → `POST /v2/instances/<id>/reboot`, the
+   record stays `ready`. `/destroy` → confirmation →
+   `DELETE /v2/instances/<id>`, every KV key for the record removed.
+
+### Restart
+
+`/restart` reboots a running instance in place. The disk, ip and credentials are
+untouched, so the `vless://` link keeps working once Xray comes back through its
+enabled systemd unit.
+
+There is no pause command. Linode bills a powered-off instance the same as a
+running one, so pausing saved nothing and only added a state to track. Only
+`/destroy` stops the invoice.
 
 ### Reconciliation fallbacks
 
@@ -52,15 +64,18 @@ Plus one scheduled handler, `reconcile`, bound to a one-minute cron trigger.
 | Instance vanished from Linode    | cron marks `failed` on the next tick                                        |
 | No callback after **15 minutes** | cron marks `failed`                                                         |
 
-Cron only touches records in `provisioning`, so a quiet fleet costs nothing.
+Cron reads the `pending` index first, so a quiet fleet costs one KV read per
+tick instead of a full registry list.
 
 ## KV schema
 
-Two key families:
+Four keys:
 
 ```
-inst:<instance-id>  -> InstanceRecord JSON
-secret:<callback-token>   -> "<instance-id>"
+inst:<instance-id>        -> InstanceRecord JSON
+secret:<callback-token>   -> "<instance-id>"   (only while provisioning)
+pending                   -> ["<id>", …]        (ids still provisioning)
+cache:images              -> image catalogue    (24 h ttl)
 ```
 
 `InstanceRecord`:
@@ -77,7 +92,10 @@ secret:<callback-token>   -> "<instance-id>"
 | `createdAt`, `readyAt`, `error`                     | bookkeeping                               |
 
 The `secret` index exists so the callback can authenticate without exposing the
-instance id.
+instance id. It is written only while a record is provisioning and deleted on
+every later save, so a token cannot be replayed. `cache:images` spares a
+500-entry Linode image fetch on every `/create`; the catalogue changes rarely,
+so a day of staleness is acceptable.
 
 ## Credential generation
 
@@ -116,17 +134,21 @@ is intentionally not remotely administrable by default.
   strongly consistent and cost no KV writes; allowed users never touch it.
 - Telegram sends `X-Telegram-Bot-Api-Secret-Token`; the worker rejects
   mismatches.
-- Callback tokens are 48 hex characters, random per instance, single use, and
-  stored in KV until the record is deleted.
-- Destroy asks for inline confirmation. There is no `/down all` shortcut.
+- Every command is registered through `bot.command` and replies through callback
+  queries; there are no text matchers, so a chat message can never trigger a
+  server action.
+- Callback tokens are 48 hex characters, random per instance, and accepted once:
+  the KV index entry disappears as soon as the record leaves `provisioning`.
+- Destroy asks for inline confirmation. There is no `/destroy all` shortcut.
 - A `vless://` link is a bearer credential: whoever holds it can use the proxy.
+  `/restart` keeps that link valid.
 
 ## Failure modes
 
-| Symptom                           | Likely cause                                | Fix                                                   |
-| --------------------------------- | ------------------------------------------- | ----------------------------------------------------- |
-| linode 401/403 on `/up`           | api token scopes / account limit            | Re-issue token with read/write scopes                 |
-| 4xx "type not available"          | `TYPE` not offered in that region           | Change `TYPE` in `wrangler.toml`                      |
-| No callback, failure after 15 min | Bootstrap script aborted                    | linode lish console → view `/var/log/vpn-setup.log`   |
-| Link answers but no traffic       | REALITY SNI blocked or IP burned            | `/up` a new region, destroy old                       |
-| `webhook` returns 403             | `WEBHOOK_SECRET` mismatch with `setWebhook` | Re-run `scripts/set-webhook.mjs` with the same secret |
+| Symptom                           | Likely cause                                | Fix                                                  |
+| --------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| linode 401/403 on `/create`       | api token scopes / account limit            | Re-issue token with read/write scopes                |
+| 4xx "type not available"          | `TYPE` not offered in that region           | Change `TYPE` in `wrangler.toml`                     |
+| No callback, failure after 15 min | Bootstrap script aborted                    | linode lish console → view `/var/log/vpn-setup.log`  |
+| Link answers but no traffic       | REALITY SNI blocked or IP burned            | `/create` a new region, destroy old                  |
+| `webhook` returns 403             | `WEBHOOK_SECRET` mismatch with `setWebhook` | Re-run `scripts/set-webhook.ts` with the same secret |

@@ -24,7 +24,7 @@ interface GateState {
 const EMPTY_STATE: GateState = { strikes: 0, blockedUntil: 0, lastStrikeAt: 0 };
 
 /**
- * Per-sender abuse gate for updates from users outside the allowlist
+ * per-sender abuse gate for updates from users outside the allowlist
  *
  * One durable object exists per Telegram user id, so counters are strongly
  * consistent and survive isolate churn. the second unauthorized update inside

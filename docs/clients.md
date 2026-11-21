@@ -61,6 +61,6 @@ Notes:
 
 ## Multiple servers
 
-Each `/up` yields a distinct profile. Keep the old profile until the new one is
-verified, then `/down` the old instance and delete its profile. Two active
+Each `/create` yields a distinct profile. Keep the old profile until the new one
+is verified, then `/destroy` the old instance and delete its profile. Two active
 profiles pointing at dead servers cause confusing timeouts.

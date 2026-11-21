@@ -178,6 +178,20 @@ export async function destroyInstance(token: string, id: number): Promise<void> 
 }
 
 /**
+ * reboots a running instance. the disk is untouched, so the vless link and its
+ * credentials keep working
+ *
+ * @param token — linode api token
+ * @param id — instance id
+ * @throws {ProviderError} when linode rejects the request
+ */
+export async function rebootInstance(token: string, id: number): Promise<void> {
+  await request<Record<string, never>>(token, `/linode/instances/${id}/reboot`, {
+    method: "POST",
+  });
+}
+
+/**
  * fetches the image catalogue so the caller can confirm cloud-init support
  *
  * @param token — linode api token

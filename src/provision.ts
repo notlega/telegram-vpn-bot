@@ -3,12 +3,40 @@ import { generateRealityKeyPair, generateShortId, generateUuid, randomHex } from
 import { saveInstance } from "./kv";
 import {
   createInstance,
+  type LinodeImage,
   type LinodeInstance,
   listImages,
   ProviderError,
   pickImage,
 } from "./linode";
 import { buildUserData, encodeUserData } from "./startup";
+
+/** KV key caching the linode image catalogue */
+const IMAGE_CACHE_KEY = "cache:images";
+
+/** image catalogue cache lifetime in seconds */
+const IMAGE_CACHE_TTL = 86_400;
+
+/**
+ * loads the linode image catalogue, preferring the kv cache
+ *
+ * only one configured image is ever checked and the catalogue changes rarely,
+ * so the full response is cached for a day instead of fetched on every create
+ *
+ * @param env — worker bindings
+ * @returns catalogue entries trimmed to id, label and capabilities
+ */
+async function loadImages(env: Env): Promise<LinodeImage[]> {
+  const cached = await env.KV.get<LinodeImage[]>(IMAGE_CACHE_KEY, "json");
+
+  if (cached) {
+    return cached;
+  }
+
+  const images = await listImages(env.LINODE_API_TOKEN);
+  await env.KV.put(IMAGE_CACHE_KEY, JSON.stringify(images), { expirationTtl: IMAGE_CACHE_TTL });
+  return images;
+}
 
 /**
  * parses the `REGIONS` configuration string into region options
@@ -40,7 +68,7 @@ export function findRegion(env: Env, id: string): Region | undefined {
 /**
  * creates a linode instance and registers it for reconciliation
  *
- * Generates a fresh key pair, uuid and short id, confirms the configured image
+ * generates a fresh key pair, uuid and short id, confirms the configured image
  * supports cloud-init, then submits the bootstrap script as user data
  *
  * @param env — worker bindings
@@ -59,7 +87,7 @@ export async function provisionServer(
   messageId: number,
   region: Region,
 ): Promise<InstanceRecord> {
-  const images = await listImages(env.LINODE_API_TOKEN);
+  const images = await loadImages(env);
   const image = pickImage(images, env.IMAGE);
 
   if (!image) {
@@ -133,7 +161,7 @@ export async function provisionServer(
  */
 export function describeProvisioning(record: InstanceRecord): string {
   return [
-    `🛠 Creating ${record.regionLabel} server`,
+    `🛠 creating ${record.regionLabel} server`,
     `instance: ${record.id}`,
     "",
     "installing Xray, this takes ~2 minutes",

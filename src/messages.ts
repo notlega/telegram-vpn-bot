@@ -55,7 +55,7 @@ export function readyMessage(record: InstanceRecord, link: string, note?: string
     `ip: ${record.ip}`,
     `instance: ${record.id}`,
     note ? `\n${note}\n` : "",
-    "import in v2rayN: servers → import from clipboard",
+    "import in v2rayN: servers → import from clipboard.",
     "",
     link,
   ]
@@ -76,19 +76,24 @@ export function failedMessage(record: InstanceRecord, reason: string): string {
     `instance: ${record.id}`,
     `reason: ${reason}`,
     "",
-    "check /status, then /down to remove the instance",
+    "check /status, then /destroy to remove the instance.",
   ].join("\n");
 }
 
 /**
  * renders one line of the `/status` list
  *
+ * the live suffix is dropped when it repeats the record state: `running` for a
+ * ready server
+ *
  * @param record — tracked instance
  * @param liveState — optional live status from the linode api
- * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready/running`
+ * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready`
  */
 export function instanceLine(record: InstanceRecord, liveState?: string): string {
-  const state = liveState ? `${record.state}/${liveState}` : record.state;
+  const quiet = liveState !== undefined && record.state === "ready" && liveState === "running";
+  const state = liveState && !quiet ? `${record.state}/${liveState}` : record.state;
+
   return `${record.regionLabel} · ${record.ip} · ${formatAge(record.createdAt)} · ${state}`;
 }
 
@@ -102,10 +107,16 @@ export function instanceLine(record: InstanceRecord, liveState?: string): string
  */
 export function statusMessage(records: InstanceRecord[], live: Map<string, string>): string {
   if (records.length === 0) {
-    return "no servers tracked. use /up to create one";
+    return "no servers tracked. use /create to create one.";
   }
 
   const lines = records.map((record) => instanceLine(record, live.get(record.id)));
 
-  return ["tracked servers:", ...lines, "", "/up — create, /down — destroy"].join("\n");
+  return [
+    "tracked servers:",
+    ...lines,
+    "",
+    "/create — new server, /restart — reboot a server",
+    "/destroy — remove",
+  ].join("\n");
 }

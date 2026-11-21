@@ -80,7 +80,7 @@ relying on `wrangler login`; both `bun run secrets` and `bun run deploy` use it.
 
 | Var       | Default                                          | Meaning                                  |
 | --------- | ------------------------------------------------ | ---------------------------------------- |
-| `REGIONS` | `jp-tyo-3:Tokyo,jp-osa:Osaka,sg-sin-2:Singapore` | region buttons in `/up`                  |
+| `REGIONS` | `jp-tyo-3:Tokyo,jp-osa:Osaka,sg-sin-2:Singapore` | region buttons in `/create`              |
 | `TYPE`    | `g6-nanode-1`                                    | linode plan id (≈$5/mo)                  |
 | `IMAGE`   | `linode/debian13`                                | linode image id, must support cloud-init |
 | `SNI`     | `www.yahoo.com`                                  | REALITY camouflage destination           |
@@ -91,6 +91,9 @@ Change a value → `bun run deploy` again.
 > the bot rejects images without cloud-init support, so Alpine needs a custom
 > golden image before it can be used.
 
+The `[triggers]` cron runs every two minutes; reconciliation windows are 8 and
+15 minutes, so the slack is intentional.
+
 ## 6. Deploy
 
 ```sh
@@ -100,24 +103,26 @@ bun run deploy
 Note the printed URL, referred to below as `<workers-url>`. it looks like
 `https://telegram-vpn-bot.<subdomain>.workers.dev`.
 
-## 7. Register the webhook
+## 7. Register the webhook and command menu
 
 ```sh
 bun run set-webhook -- <workers-url>
 ```
 
-Expected: `webhook set: ... (secret token enabled)`.
+Expected: `webhook set: ... (secret token enabled)` and a `command menu set:`
+line listing `/create`, `/restart`, `/destroy`, `/status`, `/id`.
 
 ## 8. Verification checklist
 
 1. `curl <workers-url>/` → `telegram-vpn-bot up`
 2. Bot `/id` → matches `ALLOWED_USER_ID`
-3. Bot `/up` → pick a region → status message appears
+3. Bot `/create` → pick a region → status message appears
 4. ~2 minutes later → link + QR arrive
 5. Import the link in a client (see [Clients](clients)) and load `ifconfig.me`. It
    must show the new server IP
-6. Bot `/status` → shows `ready/running`
-7. Bot `/down` → confirm → instance disappears from the linode console
+6. Bot `/status` → shows `ready`
+7. Bot `/restart` → server reboots, the same link works again
+8. Bot `/destroy` → confirm → instance disappears from the linode console
 
 If step 4 fails, open the instance in the linode lish console and read
 `/var/log/vpn-setup.log`, then see the troubleshooting table in [Operations](operations).
@@ -164,5 +169,6 @@ bunx wrangler kv namespace delete --namespace-id <id>
 wrangler delete --name <old-worker>
 ```
 
-Destroy all linode instances first with `/down`; deleting the worker leaves any
-running instance billing silently.
+Destroy all linode instances first with `/destroy`; deleting the worker leaves
+any existing instance billing silently. `/restart` does not stop billing either.
+Only `/destroy` does.

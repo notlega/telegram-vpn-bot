@@ -77,7 +77,7 @@ export function buildServerConfig(params: ProvisionParams): string {
 /**
  * builds the cloud-init shell script that prepares a fresh Debian box
  *
- * The script installs curl and unzip, downloads the latest Xray release,
+ * the script installs curl and unzip, downloads the latest Xray release,
  * writes the config and a systemd unit, enables BBR, then calls the worker back
  * up to six times so provisioning can finish without SSH
  *

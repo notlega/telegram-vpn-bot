@@ -32,7 +32,7 @@ export interface VlessParams {
 /**
  * builds a VLESS + REALITY share link importable by v2rayN and v2rayNG
  *
- * The link hard-codes the settings this bot provisions: TCP transport, REALITY
+ * the link hard-codes the settings this bot provisions: TCP transport, REALITY
  * security, `chrome` fingerprint and XTLS Vision flow
  *
  * @param params — server address and credentials
