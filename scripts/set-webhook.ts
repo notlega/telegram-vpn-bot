@@ -9,10 +9,13 @@
  */
 
 interface SetWebhookPayload {
+  /** webhook url including the `/telegram` path */
   url: string;
 
+  /** update types telegram should deliver */
   allowed_updates: string[];
 
+  /** shared secret telegram echoes back in `X-Telegram-Bot-Api-Secret-Token` */
   secret_token?: string;
 }
 
@@ -39,8 +42,10 @@ const COMMANDS: BotCommand[] = [
 ];
 
 interface TelegramResponse {
+  /** whether the api call succeeded */
   ok: boolean;
 
+  /** error description when `ok` is false */
   description?: string;
 }
 
