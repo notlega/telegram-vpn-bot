@@ -24,6 +24,13 @@ REGIONS = "jp-tyo-3:Tokyo,jp-osa:Osaka,sg-sin-2:Singapore"
 TYPE = "g6-nanode-1"
 IMAGE = "linode/debian13"
 
+# the gatekeeper class existed in early versions and is retired here; both
+# tags must stay so wrangler can replay the migration chain
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Gatekeeper"]
+
 [[migrations]]
 tag = "v2"
 deleted_classes = ["Gatekeeper"]
