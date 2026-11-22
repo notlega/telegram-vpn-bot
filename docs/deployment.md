@@ -54,13 +54,10 @@ Fill in:
 ```
 BOT_TOKEN=123456789:AA...
 LINODE_API_TOKEN=...
-ALLOWED_USER_ID=123456789
 WEBHOOK_SECRET=any-long-random-string
 ```
 
-`ALLOWED_USER_ID` is optional and accepts a comma-separated list. leave it empty
-for an open bot. botfather has no per-user restriction setting, so this value is
-the only allowlist. `WEBHOOK_SECRET` can be generated with `openssl rand -hex 32`.
+`WEBHOOK_SECRET` can be generated with `openssl rand -hex 32`.
 
 Push every value to the worker in one step:
 
@@ -112,10 +109,18 @@ bun run set-webhook -- <workers-url>
 Expected: `webhook set: ... (secret token enabled)` and a `command menu set:`
 line listing `/create`, `/restart`, `/destroy`, `/status`, `/id`.
 
-## 8. Verification checklist
+## 8. Restrict access in BotFather
+
+In the @BotFather miniapp open your bot's settings → access settings, turn on
+restriction and add your Telegram user. rejected users can't even open the bot,
+so no update ever reaches the webhook. share access with
+`https://t.me/botinvite/<bot_username>` (up to 10 invited users). this setting
+is gui-only — no api can change it.
+
+## 9. Verification checklist
 
 1. `curl <workers-url>/` → `telegram-vpn-bot up`
-2. Bot `/id` → matches `ALLOWED_USER_ID`
+2. Bot `/id` → prints the telegram id you added in botfather
 3. Bot `/create` → pick a region → status message appears
 4. ~2 minutes later → link + QR arrive
 5. Import the link in a client (see [Clients](clients)) and load `ifconfig.me`. It

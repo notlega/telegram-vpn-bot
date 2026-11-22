@@ -112,7 +112,7 @@ bun run set-webhook -- <workers-url>
 
 ### 6. Use it
 
-Open the bot, `/id` to double check the allowlist, then `/create`.
+Open the bot, then `/create`. if you need your id for the botfather access list, `/id` prints it.
 
 ## Configuration
 
@@ -131,10 +131,9 @@ out Alpine until you build a cloud-init-ready golden image.
 
 ## Security notes
 
-- Access control is opt-in. set `ALLOWED_USER_ID` (comma separated) to restrict
-  the bot; leave it empty for an open bot. when restricted, unauthorized senders
-  get no reply and the second message within an hour is blocked for a day via a
-  durable object gatekeeper
+- Access control is telegram's job: restrict who can message the bot in the
+  botfather miniapp (bot settings → access settings). the bot itself never
+  checks sender ids. the setting is gui-only — no api can change it
 - Telegram webhook requires `X-Telegram-Bot-Api-Secret-Token`
 - Destroy always requires an inline confirmation
 - Credentials are generated per instance and never written to the repository.

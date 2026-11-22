@@ -24,10 +24,6 @@ REGIONS = "jp-tyo-3:Tokyo,jp-osa:Osaka,sg-sin-2:Singapore"
 TYPE = "g6-nanode-1"
 IMAGE = "linode/debian13"
 
-[[durable_objects.bindings]]
-name = "GATEKEEPER"
-class_name = "Gatekeeper"
-
 [[migrations]]
-tag = "v1"
-new_sqlite_classes = ["Gatekeeper"]
+tag = "v2"
+deleted_classes = ["Gatekeeper"]

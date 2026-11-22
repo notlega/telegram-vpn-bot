@@ -117,7 +117,7 @@ function buildEndpoint(value: string): string {
 
 if (deleteMode) {
   await call({ method: "deleteWebhook" });
-  console.log("webhook removed");
+  console.info("webhook removed");
   process.exit(0);
 }
 
@@ -141,7 +141,7 @@ if (secret) {
 
 await call({ method: "setWebhook", payload });
 await call({ method: "setMyCommands", payload: { commands: COMMANDS } });
-console.log(`webhook set: ${endpoint}${secret ? " (secret token enabled)" : ""}`);
-console.log(`command menu set: ${COMMANDS.map((entry) => `/${entry.command}`).join(", ")}`);
+console.info(`webhook set: ${endpoint}${secret ? " (secret token enabled)" : ""}`);
+console.info(`command menu set: ${COMMANDS.map((entry) => `/${entry.command}`).join(", ")}`);
 
 export {};

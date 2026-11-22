@@ -10,7 +10,6 @@ flowchart LR
     vps -- "GET /ready?token=…" --> w
     cron["cron (*/2 * * * *)"] -- reconcile provisioning records, publish links --> w
     w <---> kv[(Workers KV)]
-    w -- strikes/blocks --> gate[(Gatekeeper Durable Object)]
 ```
 
 The worker has three HTTP routes:
@@ -125,13 +124,11 @@ is intentionally not remotely administrable by default.
 
 ## Security model
 
-- Access control is opt-in. with `ALLOWED_USER_ID` set, every update is checked
-  before any handler runs. with it empty, the bot is open and the gatekeeper is
-  never called.
-- When restricted, unauthorized senders are ignored silently. The first message
-  records a strike, the second within an hour sets a 24 hour block. state lives
-  in one durable object per user id (`GATEKEEPER` binding), so counters are
-  strongly consistent and cost no KV writes; allowed users never touch it.
+- Access control is telegram's job. restrict who can message the bot in the
+  botfather miniapp (bot settings → access settings): restricted bots accept
+  only the owner plus up to 10 added users, and rejected users can't even open
+  the bot, so no update ever reaches the webhook. the setting is gui-only —
+  there is no api to change it.
 - Telegram sends `X-Telegram-Bot-Api-Secret-Token`; the worker rejects
   mismatches.
 - Every command is registered through `bot.command` and replies through callback

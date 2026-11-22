@@ -6,7 +6,7 @@
  * Uses the project-local wrangler from node_modules (installed by `bun install`)
  */
 
-const SECRETS = ["BOT_TOKEN", "LINODE_API_TOKEN", "ALLOWED_USER_ID", "WEBHOOK_SECRET"] as const;
+const SECRETS = ["BOT_TOKEN", "LINODE_API_TOKEN", "WEBHOOK_SECRET"] as const;
 
 const wrangler = new URL("../node_modules/.bin/wrangler", import.meta.url).pathname;
 const wranglerExists = await Bun.file(wrangler).exists();
@@ -45,10 +45,10 @@ for (const name of SECRETS) {
   }
 
   pushed += 1;
-  console.log(`pushed ${name}`);
+  console.info(`pushed ${name}`);
 }
 
-console.log(`done: ${pushed} pushed, ${skipped} skipped`);
+console.info(`done: ${pushed} pushed, ${skipped} skipped`);
 
 if (pushed === 0) {
   process.exit(1);

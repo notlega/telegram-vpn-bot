@@ -8,11 +8,10 @@ import { describeProvisioning, findRegion, parseRegions, provisionServer } from 
 /**
  * builds the help text
  *
- * @param restricted — true when an allowlist is configured
  * @returns plain text shown by /start and /help
  */
-function welcomeText(restricted: boolean): string {
-  const lines = [
+function welcomeText(): string {
+  return [
     "telegram-vpn-bot",
     "",
     "/create — create a VLESS + REALITY server",
@@ -20,13 +19,7 @@ function welcomeText(restricted: boolean): string {
     "/destroy — destroy a server",
     "/status — list tracked servers",
     "/id — show your Telegram id",
-  ];
-
-  if (restricted) {
-    lines.push("", "only allowlisted users can control the vpn servers");
-  }
-
-  return lines.join("\n");
+  ].join("\n");
 }
 
 /**
@@ -80,10 +73,10 @@ async function startProvision(
 }
 
 /**
- * builds the bot: optional allowlist middleware, command handlers, callback
- * handlers and the error boundary. Stateless — one instance is created per
- * webhook request. access control is opt-in: set ALLOWED_USER_ID to restrict,
- * leave it empty for an open bot
+ * builds the bot: command handlers, callback handlers and the error boundary.
+ * Stateless — one instance is created per webhook request. access control is
+ * telegram's job: restrict who can message the bot in the BotFather settings,
+ * the bot itself never checks sender ids
  *
  * @param env — worker bindings
  * @param publicUrl — worker origin used when provisioning new servers
@@ -91,38 +84,7 @@ async function startProvision(
  */
 export function createBot(env: Env, publicUrl: string): Bot {
   const bot = new Bot(env.BOT_TOKEN);
-  const allowed = new Set(
-    (env.ALLOWED_USER_ID ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean),
-  );
-  const restricted = allowed.size > 0;
-
-  bot.use(async (context, next) => {
-    if (!restricted) {
-      await next();
-      return;
-    }
-
-    const userId = context.from?.id;
-
-    if (userId !== undefined && allowed.has(String(userId))) {
-      await next();
-      return;
-    }
-
-    if (userId === undefined) {
-      return;
-    }
-
-    const gate = env.GATEKEEPER.get(env.GATEKEEPER.idFromName(String(userId)));
-    const verdict = await gate.check();
-
-    console.warn(`unauthorized update from ${userId}: ${verdict}`);
-  });
-
-  const welcome = welcomeText(restricted);
+  const welcome = welcomeText();
 
   bot.command("start", (context) => context.reply(welcome));
   bot.command("help", (context) => context.reply(welcome));

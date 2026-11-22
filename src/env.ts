@@ -1,5 +1,3 @@
-import type { Gatekeeper } from "./gatekeeper";
-
 /**
  * bindings and configuration the worker receives from `wrangler.toml` and the
  * Cloudflare secret store
@@ -8,17 +6,11 @@ export interface Env {
   /** Workers KV namespace holding instance records and callback tokens */
   KV: KVNamespace;
 
-  /** per-sender abuse gate for updates outside the allowlist */
-  GATEKEEPER: DurableObjectNamespace<Gatekeeper>;
-
   /** Telegram bot token issued by @BotFather. Secret */
   BOT_TOKEN: string;
 
   /** linode api token with read/write access. Secret */
   LINODE_API_TOKEN: string;
-
-  /** optional comma separated Telegram user ids allowed to control the bot. secret */
-  ALLOWED_USER_ID?: string;
 
   /** REALITY camouflage host. Its TLS handshake is what an unauthenticated peer sees */
   SNI: string;

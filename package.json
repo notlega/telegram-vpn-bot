@@ -5,14 +5,14 @@
   "type": "module",
   "description": "Serverless Telegram bot that provisions VLESS + REALITY proxy servers on Vultr",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.scripts.json",
-    "lint": "biome check .",
-    "format": "biome format --write .",
     "check": "bun run typecheck && bun run lint",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "format": "biome format --write .",
+    "lint": "biome check .",
+    "secrets": "bun scripts/secrets.ts",
     "set-webhook": "bun scripts/set-webhook.ts",
-    "secrets": "bun scripts/secrets.ts"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.scripts.json"
   },
   "dependencies": {
     "grammy": "^1.46.0",
