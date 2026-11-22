@@ -2,13 +2,12 @@
 
 ## Daily use
 
-| Task             | Do this                     |
-| ---------------- | --------------------------- |
-| New server       | `/create` → region          |
-| Restart a server | `/restart` → pick           |
-| Check fleet      | `/status`                   |
-| Remove a server  | `/destroy` → pick → confirm |
-| See your TG id   | `/id`                       |
+| Task             | Do this                           |
+| ---------------- | --------------------------------- |
+| New server       | `/create [region]`                |
+| Restart a server | `/restart <ip>` or pick           |
+| Check fleet      | `/status`                         |
+| Remove a server  | `/destroy <ip>` or pick → confirm |
 
 Provisioning takes roughly 2 minutes: instance boot (~30 s), `apt-get` + Xray
 download (~60 s), callback. The bot edits its status message when done.

@@ -82,6 +82,9 @@ export interface InstanceRecord {
   /** timestamp in epoch milliseconds when the instance reported ready */
   readyAt?: number;
 
+  /** epoch ms timestamp of a requested reboot, cleared once confirmed */
+  rebootedAt?: number;
+
   /** failure reason when `state` is `failed` */
   error?: string;
 }

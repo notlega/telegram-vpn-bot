@@ -8,14 +8,16 @@ out, fresh credentials per server, no always-on process to babysit.
 
 ## What it does
 
-- `/create`: choose a region (Tokyo / Osaka / Singapore). The bot creates a
-  linode instance, waits for it to bootstrap Xray, then posts an importable
-  `vless://` link and a QR code.
-- `/restart`: reboots a server. disk, ip and credentials stay, and
-  the link keeps working after reboot.
-- `/destroy`: destroy a tracked instance for good (two-step confirmation).
+- `/create [region]`: provision a server (Tokyo / Osaka / Singapore) in a
+  region passed as an argument, or via a button prompt. The bot waits for the
+  box to bootstrap Xray, then posts the `vless://` link in a copyable code
+  block and a QR code.
+- `/restart [ip]`: reboot a server by ip, or pick one from a prompt. disk, ip
+  and credentials stay, and the link keeps working after reboot. The bot
+  confirms in chat when the server is back, with the time it took.
+- `/destroy [ip]`: destroy a tracked instance by ip without further prompts,
+  or pick one from a prompt (two-step confirmation there).
 - `/status`: tracked servers with age and live power state.
-- `/id`: print your Telegram id (setup helper).
 
 Commands are slash-only: the bot registers no text matchers, so plain chat text
 never reaches a handler.
@@ -112,7 +114,7 @@ bun run set-webhook -- <workers-url>
 
 ### 6. Use it
 
-Open the bot, then `/create`. if you need your id for the botfather access list, `/id` prints it.
+Open the bot, then `/create`.
 
 ## Configuration
 

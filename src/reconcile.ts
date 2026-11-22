@@ -1,8 +1,20 @@
 import { type Api, Bot, InputFile } from "grammy";
 import type { Env, InstanceRecord } from "./env";
-import { getInstance, getInstanceBySecret, listPendingIds, saveInstance } from "./kv";
+import {
+  getInstance,
+  getInstanceBySecret,
+  listPendingIds,
+  listRebootingIds,
+  saveInstance,
+} from "./kv";
 import { getInstance as getLinodeInstance } from "./linode";
-import { failedMessage, readyMessage, recordLink } from "./messages";
+import {
+  failedMessage,
+  readyMessage,
+  recordLink,
+  restartedMessage,
+  restartUnconfirmedMessage,
+} from "./messages";
 import { qrPng } from "./qr";
 
 /** publish without waiting for the callback once an instance has run this long */
@@ -10,6 +22,12 @@ const READY_FALLBACK_MS = 8 * 60_000;
 
 /** mark provisioning failed when nothing arrives within this window */
 const TIMEOUT_MS = 15 * 60_000;
+
+/** how long a reboot must have been requested before "running" counts as back */
+const REBOOT_GRACE_MS = 30_000;
+
+/** give up waiting for a reboot confirmation after this long */
+const REBOOT_TIMEOUT_MS = 10 * 60_000;
 
 /**
  * edits the original status message, falling back to a new message when the
@@ -19,13 +37,18 @@ const TIMEOUT_MS = 15 * 60_000;
  * @param record — record holding `chatId` and `messageId`
  * @param text — new message body
  */
-async function replaceOrSend(api: Api, record: InstanceRecord, text: string): Promise<void> {
+async function replaceOrSend(
+  api: Api,
+  record: InstanceRecord,
+  text: string,
+  options?: { parse_mode?: "HTML" },
+): Promise<void> {
   try {
-    await api.editMessageText(record.chatId, record.messageId, text);
+    await api.editMessageText(record.chatId, record.messageId, text, options);
   } catch (editError) {
     console.warn("message edit failed, sending a new one", editError);
     await api
-      .sendMessage(record.chatId, text)
+      .sendMessage(record.chatId, text, options)
       .catch((error) => console.error("publish message failed", error));
   }
 }
@@ -41,7 +64,9 @@ export async function publishReady(env: Env, record: InstanceRecord, note?: stri
   const bot = new Bot(env.BOT_TOKEN);
   const link = recordLink(record);
 
-  await replaceOrSend(bot.api, record, readyMessage(record, link, note));
+  await replaceOrSend(bot.api, record, readyMessage(record, link, note), {
+    parse_mode: "HTML",
+  });
 
   const png = await qrPng(link);
   await bot.api
@@ -109,17 +134,27 @@ async function markFailed(env: Env, record: InstanceRecord, reason: string): Pro
 }
 
 /**
- * cron entry point: advances every record still in `provisioning`
+ * cron entry point: advances provisioning records and pending reboot
+ * confirmations
  *
- * reads the provisioning index first, so a tick with nothing pending costs one
- * KV read. Publishes records whose instance is running past the fallback
- * window, fails records whose instance disappeared, and times out records older
- * than 15 minutes
+ * reads the `pending` and `rebooting` indexes first, so a tick with nothing to
+ * do costs two KV reads. Provisioning records are published once their instance
+ * is running past the fallback window, failed when the instance disappeared and
+ * timed out after 15 minutes. Rebooting records are confirmed once linode
+ * reports them running again
  *
  * @param env — worker bindings
  */
 export async function reconcile(env: Env): Promise<void> {
-  const ids = await listPendingIds(env.KV);
+  const [ids, rebooting] = await Promise.all([listPendingIds(env.KV), listRebootingIds(env.KV)]);
+
+  if (ids.length === 0 && rebooting.length === 0) {
+    return;
+  }
+
+  if (rebooting.length > 0) {
+    await reconcileReboots(env, rebooting);
+  }
 
   if (ids.length === 0) {
     return;
@@ -168,6 +203,52 @@ export async function reconcile(env: Env): Promise<void> {
 
     if (age > TIMEOUT_MS) {
       await markFailed(env, record, "no completion callback within 15 minutes");
+    }
+  }
+}
+
+/**
+ * confirms or abandons reboots waiting for the server to come back
+ *
+ * a reboot counts as done once linode reports `running` and at least
+ * {@link REBOOT_GRACE_MS} has passed — the grace guards against the stale
+ * `running` status read before the reboot actually starts. When nothing
+ * confirms within {@link REBOOT_TIMEOUT_MS}, the operator is told to check
+ * `/status`
+ *
+ * @param env — worker bindings
+ * @param ids — record ids taken from the `rebooting` index
+ */
+async function reconcileReboots(env: Env, ids: string[]): Promise<void> {
+  const api = new Bot(env.BOT_TOKEN).api;
+
+  for (const id of ids) {
+    const record = await getInstance(env.KV, id);
+
+    if (!record || record.rebootedAt === undefined) {
+      continue;
+    }
+
+    const elapsed = Date.now() - record.rebootedAt;
+
+    let status: string | null = null;
+
+    try {
+      const instance = await getLinodeInstance(env.LINODE_API_TOKEN, Number(record.id));
+      status = instance?.status ?? null;
+    } catch (error) {
+      console.warn("reconcile: linode status lookup failed", error);
+    }
+
+    if (status === "running" && elapsed > REBOOT_GRACE_MS) {
+      await saveInstance(env.KV, { ...record, rebootedAt: undefined });
+      await replaceOrSend(api, record, restartedMessage(record, elapsed));
+      continue;
+    }
+
+    if (elapsed > REBOOT_TIMEOUT_MS) {
+      await saveInstance(env.KV, { ...record, rebootedAt: undefined });
+      await replaceOrSend(api, record, restartUnconfirmedMessage());
     }
   }
 }

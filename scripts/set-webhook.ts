@@ -36,7 +36,6 @@ const COMMANDS: BotCommand[] = [
   { command: "restart", description: "reboot a server" },
   { command: "destroy", description: "destroy a server" },
   { command: "status", description: "list tracked servers" },
-  { command: "id", description: "show your Telegram id" },
 ];
 
 interface TelegramResponse {

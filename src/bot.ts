@@ -1,6 +1,6 @@
-import { type Api, Bot, InlineKeyboard } from "grammy";
+import { type Api, Bot, type Context, InlineKeyboard } from "grammy";
 import type { Env, InstanceRecord, Region } from "./env";
-import { deleteInstanceRecord, getInstance, listInstanceRecords } from "./kv";
+import { deleteInstanceRecord, getInstance, listInstanceRecords, saveInstance } from "./kv";
 import { destroyInstance, listInstances, ProviderError, rebootInstance } from "./linode";
 import { statusMessage } from "./messages";
 import { describeProvisioning, findRegion, parseRegions, provisionServer } from "./provision";
@@ -18,7 +18,6 @@ function welcomeText(): string {
     "/restart — reboot a server",
     "/destroy — destroy a server",
     "/status — list tracked servers",
-    "/id — show your Telegram id",
   ].join("\n");
 }
 
@@ -40,6 +39,68 @@ function errorText(error: unknown): string {
  */
 function serverLabel(record: InstanceRecord): string {
   return `${record.regionLabel} · ${record.ip}`;
+}
+
+/**
+ * reboots a ready server and arms the cron confirmation
+ *
+ * works from both the `/restart <ip>` command and the inline keyboard: the
+ * notice is edited into the current message when there is one, or sent as a
+ * reply otherwise
+ *
+ * @param context — grammY update context
+ * @param env — worker bindings
+ * @param record — ready instance to reboot
+ */
+async function startReboot(context: Context, env: Env, record: InstanceRecord): Promise<void> {
+  const notify = (text: string) => context.editMessageText(text).catch(() => context.reply(text));
+
+  try {
+    await rebootInstance(env.LINODE_API_TOKEN, Number(record.id));
+    await saveInstance(env.KV, { ...record, rebootedAt: Date.now() });
+    await notify(
+      `🔁 restarting ${serverLabel(record)} — the bot will confirm when it is back online.`,
+    ).catch((error) => console.warn("restart notice failed", error));
+  } catch (error) {
+    console.error("restart failed", error);
+    await notify(`❌ restart failed: ${errorText(error)}`).catch((noticeError) =>
+      console.warn("restart failure notice failed", noticeError),
+    );
+  }
+}
+
+/**
+ * destroys a server and its record without further confirmation
+ *
+ * used by both the `/destroy <ip>` command and the confirmation button; the
+ * notice is edited into the current message when there is one, or sent as a
+ * reply otherwise
+ *
+ * @param context — grammY update context
+ * @param env — worker bindings
+ * @param record — instance to destroy
+ */
+async function performDestroy(context: Context, env: Env, record: InstanceRecord): Promise<void> {
+  const notify = (text: string) => context.editMessageText(text).catch(() => context.reply(text));
+
+  try {
+    await destroyInstance(env.LINODE_API_TOKEN, Number(record.id)).catch((error: unknown) => {
+      if (error instanceof ProviderError && error.status === 404) {
+        return;
+      }
+
+      throw error;
+    });
+    await deleteInstanceRecord(env.KV, record);
+    await notify(`🗑 destroyed ${serverLabel(record)}.`).catch((error) =>
+      console.warn("destroyed notice failed", error),
+    );
+  } catch (error) {
+    console.error("destroy failed", error);
+    await notify(`❌ destroy failed: ${errorText(error)}`).catch((noticeError) =>
+      console.warn("destroy failure notice failed", noticeError),
+    );
+  }
 }
 
 /**
@@ -88,7 +149,6 @@ export function createBot(env: Env, publicUrl: string): Bot {
 
   bot.command("start", (context) => context.reply(welcome));
   bot.command("help", (context) => context.reply(welcome));
-  bot.command("id", (context) => context.reply(`your Telegram id: ${context.from?.id}`));
 
   bot.command("create", async (context) => {
     const argument = context.match.trim();
@@ -104,7 +164,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
         keyboard.text(region.label, `create:${region.id}`);
       });
 
-      await context.reply("choose a region:", { reply_markup: keyboard });
+      await context.reply("🌐 choose a region:", { reply_markup: keyboard });
       return;
     }
 
@@ -139,7 +199,21 @@ export function createBot(env: Env, publicUrl: string): Bot {
   });
 
   bot.command("restart", async (context) => {
+    const argument = context.match.trim();
     const records = await listInstanceRecords(env.KV);
+
+    if (argument) {
+      const record = records.find((candidate) => candidate.ip === argument);
+
+      if (record?.state !== "ready") {
+        await context.reply(`❓ no running server with ip ${argument}.`);
+      } else {
+        await startReboot(context, env, record);
+      }
+
+      return;
+    }
+
     const running = records.filter((record) => record.state === "ready");
 
     if (running.length === 0) {
@@ -153,7 +227,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       keyboard.text(serverLabel(record), `restart:${record.id}`).row();
     }
 
-    await context.reply("restart which server?", { reply_markup: keyboard });
+    await context.reply("🔁 restart which server?", { reply_markup: keyboard });
   });
 
   bot.callbackQuery(/^restart:(.+)$/, async (context) => {
@@ -164,23 +238,24 @@ export function createBot(env: Env, publicUrl: string): Bot {
       return;
     }
 
-    await context.answerCallbackQuery("restarting…");
-
-    try {
-      await rebootInstance(env.LINODE_API_TOKEN, Number(record.id));
-      await context
-        .editMessageText(`🔄 restarting ${serverLabel(record)}, back online in ~1 minute.`)
-        .catch((error) => console.warn("restart notice failed", error));
-    } catch (error) {
-      console.error("restart failed", error);
-      await context
-        .editMessageText(`❌ restart failed: ${errorText(error)}`)
-        .catch((noticeError) => console.warn("restart failure notice failed", noticeError));
-    }
+    await startReboot(context, env, record);
   });
 
   bot.command("destroy", async (context) => {
+    const argument = context.match.trim();
     const records = await listInstanceRecords(env.KV);
+
+    if (argument) {
+      const record = records.find((candidate) => candidate.ip === argument);
+
+      if (!record) {
+        await context.reply(`❓ no server with ip ${argument}.`);
+      } else {
+        await performDestroy(context, env, record);
+      }
+
+      return;
+    }
 
     if (records.length === 0) {
       await context.reply("nothing to destroy.");
@@ -193,7 +268,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       keyboard.text(`${serverLabel(record)} · ${record.state}`, `destroy:${record.id}`).row();
     }
 
-    await context.reply("destroy which server?", { reply_markup: keyboard });
+    await context.reply("🗑 destroy which server?", { reply_markup: keyboard });
   });
 
   bot.callbackQuery(/^destroy:(.+)$/, async (context) => {
@@ -210,7 +285,7 @@ export function createBot(env: Env, publicUrl: string): Bot {
       .text("Cancel", `cancel:${record.id}`);
 
     await context
-      .editMessageText(`destroy ${serverLabel(record)}?\nthis cannot be undone.`, {
+      .editMessageText(`⚠️ destroy ${serverLabel(record)}?\nthis cannot be undone.`, {
         reply_markup: keyboard,
       })
       .catch((error) => console.warn("destroy confirmation render failed", error));
@@ -225,26 +300,8 @@ export function createBot(env: Env, publicUrl: string): Bot {
       return;
     }
 
-    await context.answerCallbackQuery("destroying…");
-
-    try {
-      await destroyInstance(env.LINODE_API_TOKEN, Number(id)).catch((error: unknown) => {
-        if (error instanceof ProviderError && error.status === 404) {
-          return;
-        }
-
-        throw error;
-      });
-      await deleteInstanceRecord(env.KV, record);
-      await context
-        .editMessageText(`🗑 destroyed ${serverLabel(record)}.`)
-        .catch((error) => console.warn("destroyed notice failed", error));
-    } catch (error) {
-      console.error("destroy failed", error);
-      await context
-        .editMessageText(`❌ destroy failed: ${errorText(error)}`)
-        .catch((noticeError) => console.warn("destroy failure notice failed", noticeError));
-    }
+    await context.answerCallbackQuery("🗑 destroying…");
+    await performDestroy(context, env, record);
   });
 
   bot.callbackQuery(/^cancel:(.+)$/, async (context) => {

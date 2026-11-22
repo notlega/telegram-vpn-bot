@@ -41,14 +41,21 @@ Plus one scheduled handler, `reconcile`, bound to a two-minute cron trigger.
    the `vless://` link and sends a QR PNG. the token index is deleted on that
    save, so the callback works once.
 5. **Restart, cleanup.** `/restart` → `POST /v2/instances/<id>/reboot`, the
-   record stays `ready`. `/destroy` → confirmation →
-   `DELETE /v2/instances/<id>`, every KV key for the record removed.
+   record stays `ready` and gains a `rebootedAt` timestamp. `/destroy` →
+   confirmation → `DELETE /v2/instances/<id>`, every KV key for the record
+   removed.
 
 ### Restart
 
-`/restart` reboots a running instance in place. The disk, ip and credentials are
-untouched, so the `vless://` link keeps working once Xray comes back through its
-enabled systemd unit.
+`/restart` reboots a running instance in place, by ip argument or button prompt.
+The disk, ip and credentials are untouched, so the `vless://` link keeps working
+once Xray comes back through its enabled systemd unit.
+
+linode accepts the reboot request before the server is actually back, so the bot
+tracks completion: the record carries `rebootedAt` while a reboot is in flight,
+the cron sweep confirms the chat message (`✅ … restarted in 42 s`) once linode
+reports `running` again — with a 30 second grace so the stale pre-reboot
+`running` status cannot count — and warns if nothing confirms within 10 minutes.
 
 There is no pause command. Linode bills a powered-off instance the same as a
 running one, so pausing saved nothing and only added a state to track. Only
@@ -88,7 +95,7 @@ cache:images              -> image catalogue    (24 h ttl)
 | `chatId`, `messageId`                               | where the status message lives            |
 | `secret`                                            | one-time callback token                   |
 | `uuid`, `privateKey`, `publicKey`, `shortId`, `sni` | Xray credentials                          |
-| `createdAt`, `readyAt`, `error`                     | bookkeeping                               |
+| `createdAt`, `readyAt`, `rebootedAt`, `error`       | bookkeeping                               |
 
 The `secret` index exists so the callback can authenticate without exposing the
 instance id. It is written only while a record is provisioning and deleted on

@@ -24,6 +24,25 @@ export function formatAge(createdAt: number): string {
 }
 
 /**
+ * formats an elapsed duration for chat copy
+ *
+ * @param ms — elapsed milliseconds
+ * @returns compact duration such as `42 s` or `2m 05s`
+ */
+export function formatDuration(ms: number): string {
+  const seconds = Math.max(0, Math.round(ms / 1000));
+
+  if (seconds < 60) {
+    return `${seconds} s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+
+  return `${minutes}m ${String(rest).padStart(2, "0")}s`;
+}
+
+/**
  * builds the share link for a tracked instance
  *
  * @param record — instance record with a resolved IP
@@ -41,13 +60,27 @@ export function recordLink(record: InstanceRecord): string {
 }
 
 /**
+ * renders the link as a Telegram HTML code block so clients can copy it with
+ * one tap
+ *
+ * @param link — the `vless://` link
+ * @returns HTML fragment, safe because the link cannot contain markup
+ */
+function linkBlock(link: string): string {
+  return `<pre>${link.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
+}
+
+/**
  * renders the "server ready" chat message
+ *
+ * the result is HTML with the link inside a code block; send it with
+ * `parse_mode: "HTML"`
  *
  * @param record — instance that finished provisioning
  * @param link — share link for the client
  * @param note — optional warning appended above the link, used when the
  *   bootstrap callback was missed
- * @returns plain-text message body
+ * @returns HTML message body
  */
 export function readyMessage(record: InstanceRecord, link: string, note?: string): string {
   return [
@@ -57,10 +90,30 @@ export function readyMessage(record: InstanceRecord, link: string, note?: string
     note ? `\n${note}\n` : "",
     "import in v2rayN: servers → import from clipboard.",
     "",
-    link,
+    linkBlock(link),
   ]
     .filter((line) => line !== undefined)
     .join("\n");
+}
+
+/**
+ * renders the restart-confirmed chat message
+ *
+ * @param record — instance that came back online
+ * @param elapsedMs — time between the reboot request and the confirmation
+ * @returns plain-text message body
+ */
+export function restartedMessage(record: InstanceRecord, elapsedMs: number): string {
+  return `✅ ${record.regionLabel} (${record.ip}) restarted in ${formatDuration(elapsedMs)}.`;
+}
+
+/**
+ * renders the message shown when a reboot never confirmed
+ *
+ * @returns plain-text message body
+ */
+export function restartUnconfirmedMessage(): string {
+  return "⚠️ restart not confirmed after 10 minutes, check /status.";
 }
 
 /**

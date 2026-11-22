@@ -107,7 +107,7 @@ bun run set-webhook -- <workers-url>
 ```
 
 Expected: `webhook set: ... (secret token enabled)` and a `command menu set:`
-line listing `/create`, `/restart`, `/destroy`, `/status`, `/id`.
+line listing `/create`, `/restart`, `/destroy`, `/status`.
 
 ## 8. Restrict access in BotFather
 
@@ -120,14 +120,13 @@ is gui-only — no api can change it.
 ## 9. Verification checklist
 
 1. `curl <workers-url>/` → `telegram-vpn-bot up`
-2. Bot `/id` → prints the telegram id you added in botfather
-3. Bot `/create` → pick a region → status message appears
-4. ~2 minutes later → link + QR arrive
-5. Import the link in a client (see [Clients](clients)) and load `ifconfig.me`. It
+2. Bot `/create` → pick a region → status message appears
+3. ~2 minutes later → link + QR arrive
+4. Import the link in a client (see [Clients](clients)) and load `ifconfig.me`. It
    must show the new server IP
-6. Bot `/status` → shows `ready`
-7. Bot `/restart` → server reboots, the same link works again
-8. Bot `/destroy` → confirm → instance disappears from the linode console
+5. Bot `/status` → shows `ready`
+6. Bot `/restart <ip>` → bot confirms in chat when the server is back, with the time it took
+7. Bot `/destroy` → confirm → instance disappears from the linode console
 
 If step 4 fails, open the instance in the linode lish console and read
 `/var/log/vpn-setup.log`, then see the troubleshooting table in [Operations](operations).

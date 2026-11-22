@@ -6,13 +6,12 @@ API out, fresh credentials per server, no always-on process to babysit.
 
 ## What it does
 
-| Command    | Action                                                                                                                                                       |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/create`  | pick a region (Tokyo / Osaka / Singapore), bot creates a linode instance, waits for it to bootstrap Xray, then posts an importable `vless://` link + QR code |
-| `/restart` | reboot a server: disk, ip and credentials stay, the same `vless://` link keeps working                                                                       |
-| `/destroy` | destroy a tracked instance for good (two-step confirmation)                                                                                                  |
-| `/status`  | tracked servers with age and live power state                                                                                                                |
-| `/id`      | print your Telegram id (setup helper)                                                                                                                        |
+| Command            | Action                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/create [region]` | provision a server (Tokyo / Osaka / Singapore) by region argument or button, then get the `vless://` link in a copyable code block + QR code |
+| `/restart [ip]`    | reboot a server by ip or button; the link survives, and the bot reports the time the reboot took                                             |     |
+| `/destroy`         | destroy a tracked instance for good (two-step confirmation)                                                                                  |
+| `/status`          | tracked servers with age and live power state                                                                                                |
 
 Commands are slash-only. the bot registers no text matchers, so plain chat text
 never reaches a handler.
