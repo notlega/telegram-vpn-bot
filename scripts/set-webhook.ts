@@ -8,6 +8,7 @@
  * reads BOT_TOKEN and WEBHOOK_SECRET from .env (bun loads it automatically)
  */
 
+/** body sent to `setWebhook` */
 interface SetWebhookPayload {
   /** webhook url including the `/telegram` path */
   url: string;
@@ -28,6 +29,7 @@ interface BotCommand {
   description: string;
 }
 
+/** one telegram api call this script can make */
 type WebhookRequest =
   | { method: "deleteWebhook" }
   | { method: "setWebhook"; payload: SetWebhookPayload }
@@ -41,6 +43,7 @@ const COMMANDS: BotCommand[] = [
   { command: "status", description: "list tracked servers" },
 ];
 
+/** reply envelope shared by every telegram api call */
 interface TelegramResponse {
   /** whether the api call succeeded */
   ok: boolean;
