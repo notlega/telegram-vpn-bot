@@ -42,6 +42,7 @@ export interface VlessParams {
  * // vless://<uuid>@203.0.113.10:443?type=tcp&security=reality&…#VPN-Seoul
  */
 export function buildVlessLink(params: VlessParams): string {
+  const port = params.port ?? 443;
   const query = new URLSearchParams({
     type: "tcp",
     security: "reality",
@@ -53,6 +54,5 @@ export function buildVlessLink(params: VlessParams): string {
     sid: params.shortId,
   });
 
-  const port = params.port ?? 443;
   return `vless://${params.uuid}@${params.host}:${port}?${query.toString()}#${encodeURIComponent(params.label)}`;
 }

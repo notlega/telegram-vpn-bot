@@ -98,11 +98,11 @@ export async function provisionServer(
     throw new Error(`image "${env.IMAGE}" has no cloud-init support, user data would not run`);
   }
 
+  let instance: LinodeInstance;
   const keys = await generateRealityKeyPair();
   const uuid = generateUuid();
   const shortId = generateShortId();
   const secret = randomHex(24);
-
   const userData = buildUserData({
     uuid,
     privateKey: keys.privateKey,
@@ -111,8 +111,6 @@ export async function provisionServer(
     callbackUrl: `${publicUrl}/ready`,
     secret,
   });
-
-  let instance: LinodeInstance;
 
   try {
     instance = await createInstance(env.LINODE_API_TOKEN, {

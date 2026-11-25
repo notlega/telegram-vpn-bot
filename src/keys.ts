@@ -65,11 +65,10 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
     "deriveBits",
   ])) as CryptoKeyPair;
 
+  let rawPrivate: Uint8Array;
   const rawPublic = new Uint8Array(
     (await crypto.subtle.exportKey("raw", keyPair.publicKey)) as ArrayBuffer,
   );
-
-  let rawPrivate: Uint8Array;
 
   try {
     rawPrivate = new Uint8Array(
@@ -78,9 +77,11 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
   } catch (error) {
     // some runtimes only allow PKCS#8 export; the trailing 32 bytes are the seed.
     console.warn("raw private key export unavailable, falling back to PKCS#8", error);
+
     const pkcs8 = new Uint8Array(
       (await crypto.subtle.exportKey("pkcs8", keyPair.privateKey)) as ArrayBuffer,
     );
+
     rawPrivate = pkcs8.slice(-32);
   }
 

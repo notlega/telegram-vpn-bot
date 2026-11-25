@@ -19,6 +19,7 @@ export class ProviderError extends Error {
     readonly path: string,
   ) {
     super(`linode api ${status} on ${method} ${path}: ${detail}`);
+
     this.name = "ProviderError";
   }
 }
@@ -103,7 +104,6 @@ async function request<T>(token: string, path: string, init: RequestInit = {}): 
       ...(init.headers ?? {}),
     },
   });
-
   const body = await response.text();
 
   if (!response.ok) {

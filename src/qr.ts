@@ -12,6 +12,7 @@ import { encodeGrayscalePng } from "./png";
  */
 export async function qrPng(text: string, scale = 8, quietZone = 4): Promise<Uint8Array> {
   const qr = qrcode(0, "M");
+
   qr.addData(text);
   qr.make();
 

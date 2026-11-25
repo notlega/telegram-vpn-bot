@@ -183,8 +183,8 @@ export async function listRebootingIds(kv: KVNamespace): Promise<string[]> {
  * @returns all instance records sorted by creation time
  */
 export async function listInstanceRecords(kv: KVNamespace): Promise<InstanceRecord[]> {
-  const records: InstanceRecord[] = [];
   let cursor: string | undefined;
+  const records: InstanceRecord[] = [];
 
   do {
     const page = await kv.list<InstanceRecord>({ prefix: INSTANCE_PREFIX, cursor });

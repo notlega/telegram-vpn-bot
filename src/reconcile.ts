@@ -114,9 +114,7 @@ export async function handleReady(env: Env, request: Request): Promise<Response>
   };
 
   await saveInstance(env.KV, updated);
-
   await publishReady(env, updated).catch((error) => console.error("publishReady failed", error));
-
   return new Response("ok");
 }
 
@@ -173,9 +171,8 @@ export async function reconcile(env: Env): Promise<void> {
   records.sort((a, b) => a.createdAt - b.createdAt);
 
   for (const record of records) {
-    const age = Date.now() - record.createdAt;
-
     let instance = null;
+    const age = Date.now() - record.createdAt;
 
     try {
       instance = await getLinodeInstance(env.LINODE_API_TOKEN, Number(record.id));
@@ -229,9 +226,8 @@ async function reconcileReboots(env: Env, ids: string[]): Promise<void> {
       continue;
     }
 
-    const elapsed = Date.now() - record.rebootedAt;
-
     let status: string | null = null;
+    const elapsed = Date.now() - record.rebootedAt;
 
     try {
       const instance = await getLinodeInstance(env.LINODE_API_TOKEN, Number(record.id));

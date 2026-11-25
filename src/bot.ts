@@ -124,6 +124,7 @@ async function startProvision(
 
   try {
     const record = await provisionServer(env, publicUrl, chatId, placeholder.message_id, region);
+
     await api.editMessageText(chatId, placeholder.message_id, describeProvisioning(record));
   } catch (error) {
     console.error("provision failed", error);
@@ -327,8 +328,9 @@ export function createBot(env: Env, publicUrl: string): Bot {
   });
 
   bot.catch(async (error) => {
-    console.error("bot error", error);
     const chatId = error.ctx.chat?.id;
+
+    console.error("bot error", error);
 
     if (chatId) {
       await error.ctx.api
