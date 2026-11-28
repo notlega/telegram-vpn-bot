@@ -35,15 +35,16 @@ client profiles are per-link, so add the new one and delete the old one.
 
 ## Cost
 
-| Item                                | Cost                                            |
-| ----------------------------------- | ----------------------------------------------- |
-| Cloudflare Workers + KV + cron      | $0 (free tier)                                  |
-| linode `g6-nanode-1` (1 vCPU, 1 GB) | ≈ $0.0075/hour (≈ $5/month) per existing server |
-| Destroyed instances                 | $0                                              |
+| Item                                | Cost                                                         |
+| ----------------------------------- | ------------------------------------------------------------ |
+| Cloudflare Workers + KV + cron      | $0 (free tier)                                               |
+| linode `g6-nanode-1` (1 vCPU, 1 GB) | ≈ $0.0075/hour (≈ $5/month), us dollars, per existing server |
+| Destroyed instances                 | $0                                                           |
 
 The bot itself is free; every linode instance bills until it is destroyed.
 Linode bills hourly at `hourly price × hours alive`, capped at the monthly
-price per started month. The bot reads that price from the Linode api, caches it
+price per started month. Linode quotes prices in us dollars, and every cost
+message says `(usd)` for that reason. The bot reads that price from the Linode api, caches it
 for a day, and stamps it on the record at creation, so `/status` shows accrued
 cost per server plus a fleet total, `/help` prints the hourly and monthly rate,
 and the `/destroy` confirmation and final message show what the server cost.

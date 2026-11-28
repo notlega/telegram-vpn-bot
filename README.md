@@ -18,10 +18,10 @@ out, fresh credentials per server, no always-on process to babysit.
 - `/destroy [ip]`: destroy a tracked instance by ip without further prompts,
   or pick one from a prompt (two-step confirmation there). both show the
   lifetime cost.
-- `/status`: tracked servers with age, live power state and accrued cost, plus
-  a fleet total.
+- `/status`: tracked servers with age, live power state and accrued cost in us
+  dollars, plus a fleet total.
 - `/start`, `/help`: command list plus the hourly and monthly price of the
-  current plan.
+  current plan, quoted in us dollars, the currency linode bills in.
 
 Commands are slash-only: the bot registers no text matchers, so plain chat text
 never reaches a handler.

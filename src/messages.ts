@@ -114,7 +114,7 @@ export function accruedUsd(record: InstanceRecord, fallback?: PriceHint): number
  * @returns chat copy line ending with a period
  */
 export function costNote(hourly: number, monthly: number, type: string): string {
-  return `instances cost ≈${formatCost(hourly)} per hour (≈${formatCost(monthly)} per month) on \`${type}\`.`;
+  return `instances cost ≈${formatCost(hourly)} per hour (≈${formatCost(monthly)} per month, us dollars) on \`${type}\`.`;
 }
 
 /**
@@ -123,7 +123,7 @@ export function costNote(hourly: number, monthly: number, type: string): string 
  * @returns chat copy line ending with a period
  */
 export function costNoteFallback(): string {
-  return "instances bill from creation until /destroy.";
+  return "instances bill in us dollars from creation until /destroy.";
 }
 
 /**
@@ -227,7 +227,7 @@ export function failedMessage(record: InstanceRecord, reason: string): string {
  * @param liveState — optional live status from the linode api
  * @param price — plan price used for records created before the price was
  *   stamped
- * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready · ≈$0.09`
+ * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready · ≈$0.09`, usd
  */
 export function instanceLine(
   record: InstanceRecord,
@@ -269,7 +269,7 @@ export function statusMessage(
   const footer = ["/create — new server, /restart — reboot a server", "/destroy — remove"];
 
   if (costs.length > 0) {
-    footer.push(`total accrued ≈${formatCost(total)}`);
+    footer.push(`total accrued ≈${formatCost(total)} (usd)`);
   }
 
   return ["tracked servers:", ...lines, "", ...footer].join("\n");
@@ -285,7 +285,7 @@ export function statusMessage(
  */
 export function destroyPrompt(record: InstanceRecord, price?: PriceHint): string {
   const cost = accruedUsd(record, price);
-  const priceLine = cost === null ? "" : `\naccrued ≈${formatCost(cost)} so far.`;
+  const priceLine = cost === null ? "" : `\naccrued ≈${formatCost(cost)} (usd) so far.`;
 
   return `⚠️ destroy ${record.regionLabel} · ${record.ip}?${priceLine}\nthis cannot be undone.`;
 }
@@ -298,7 +298,7 @@ export function destroyPrompt(record: InstanceRecord, price?: PriceHint): string
  * @returns chat copy ending with a period
  */
 export function destroyedMessage(record: InstanceRecord, cost: number | null): string {
-  const priceLine = cost === null ? "" : ` lifetime cost ≈${formatCost(cost)}.`;
+  const priceLine = cost === null ? "" : ` lifetime cost ≈${formatCost(cost)} (usd).`;
 
   return `🗑 destroyed ${record.regionLabel} · ${record.ip}.${priceLine}`;
 }

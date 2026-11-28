@@ -11,7 +11,7 @@ API out, fresh credentials per server, no always-on process to babysit.
 | `/create [region]` | provision a server (Tokyo / Osaka / Singapore) by region argument or button, then get the `vless://` link in a copyable code block + QR code |
 | `/restart [ip]`    | reboot a server by ip or button; the link survives, and the bot reports the time the reboot took                                             |     |
 | `/destroy [ip]`    | destroy a tracked instance by ip (no prompt) or by button (two-step confirmation); both report the lifetime cost                             |
-| `/status`          | tracked servers with age, live power state and accrued cost, plus a fleet total                                                              |
+| `/status`          | tracked servers with age, live power state and accrued cost (usd), plus a fleet total                                                        |
 
 Commands are slash-only. the bot registers no text matchers, so plain chat text
 never reaches a handler.
