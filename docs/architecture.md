@@ -75,13 +75,15 @@ tick instead of a full registry list.
 
 ## KV schema
 
-Four keys:
+Five keys plus two caches:
 
 ```
 inst:<instance-id>        -> InstanceRecord JSON
 secret:<callback-token>   -> "<instance-id>"   (only while provisioning)
 pending                   -> ["<id>", …]        (ids still provisioning)
+rebooting                 -> ["<id>", …]        (ids waiting for a restart confirmation)
 cache:images              -> image catalogue    (24 h ttl)
+cache:types               -> plan price         (24 h ttl)
 ```
 
 `InstanceRecord`:
@@ -96,12 +98,14 @@ cache:images              -> image catalogue    (24 h ttl)
 | `secret`                                            | one-time callback token                   |
 | `uuid`, `privateKey`, `publicKey`, `shortId`, `sni` | Xray credentials                          |
 | `createdAt`, `readyAt`, `rebootedAt`, `error`       | bookkeeping                               |
+| `priceHourly`, `priceMonthly`                       | plan price stamped at creation, cost copy |
 
 The `secret` index exists so the callback can authenticate without exposing the
 instance id. It is written only while a record is provisioning and deleted on
 every later save, so a token cannot be replayed. `cache:images` spares a
 500-entry Linode image fetch on every `/create`; the catalogue changes rarely,
-so a day of staleness is acceptable.
+so a day of staleness is acceptable. `cache:types` holds the plan price the same
+way, so `/status`, `/help` and `/destroy` report costs without calling Linode.
 
 ## Credential generation
 

@@ -43,6 +43,90 @@ export function formatDuration(ms: number): string {
 }
 
 /**
+ * formats a us dollar amount for chat copy
+ *
+ * @param usd — amount in us dollars
+ * @returns `$0.42` for amounts of a cent or more, `$0.0075` below that
+ */
+export function formatCost(usd: number): string {
+  if (usd >= 0.01) {
+    return `$${usd.toFixed(2)}`;
+  }
+
+  const fixed = usd.toFixed(4).replace(/0+$/, "");
+
+  if (fixed.endsWith(".")) {
+    return "$0.00";
+  }
+
+  return `$${fixed}`;
+}
+
+/** plan price used to fill gaps for records created before prices were stamped */
+export interface PriceHint {
+  /** hourly price in us dollars */
+  hourly: number;
+
+  /** monthly price in us dollars, the billing cap */
+  monthly: number;
+}
+
+/** hours in a billing month, the divisor linode uses for its hourly rate */
+const HOURS_PER_MONTH = 730;
+
+/**
+ * computes what an instance has billed since creation
+ *
+ * linode bills hourly, capped at the monthly price per started month, which is
+ * why chat copy prefixes the result with `≈`
+ *
+ * @param record — tracked instance
+ * @param fallback — plan price used for records created before the price was
+ *   stamped
+ * @returns accrued us dollars, or `null` when no price is known
+ */
+export function accruedUsd(record: InstanceRecord, fallback?: PriceHint): number | null {
+  const hourly = record.priceHourly ?? fallback?.hourly;
+
+  if (hourly === undefined) {
+    return null;
+  }
+
+  const monthly = record.priceMonthly ?? fallback?.monthly;
+  const hours = Math.max(0, Date.now() - record.createdAt) / 3_600_000;
+  const raw = hours * hourly;
+
+  if (monthly === undefined) {
+    return raw;
+  }
+
+  const months = Math.max(1, Math.ceil(hours / HOURS_PER_MONTH));
+
+  return Math.min(raw, months * monthly);
+}
+
+/**
+ * renders the price note shown by `/start` and `/help`
+ *
+ * @param hourly — hourly price in us dollars
+ * @param monthly — monthly price in us dollars
+ * @param type — plan id shown to the operator
+ * @returns chat copy line ending with a period
+ */
+export function costNote(hourly: number, monthly: number, type: string): string {
+  return `instances cost ≈${formatCost(hourly)} per hour (≈${formatCost(monthly)} per month) on \`${type}\`.`;
+}
+
+/**
+ * renders the fallback price note for a cold cache
+ *
+ * @returns chat copy line ending with a period
+ */
+export function costNoteFallback(): string {
+  return "instances bill from creation until /destroy.";
+}
+
+/**
  * builds the share link for a tracked instance
  *
  * @param record — instance record with a resolved IP
@@ -141,13 +225,21 @@ export function failedMessage(record: InstanceRecord, reason: string): string {
  *
  * @param record — tracked instance
  * @param liveState — optional live status from the linode api
- * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready`
+ * @param price — plan price used for records created before the price was
+ *   stamped
+ * @returns single line such as `Seoul · 203.0.113.10 · 12m · ready · ≈$0.09`
  */
-export function instanceLine(record: InstanceRecord, liveState?: string): string {
+export function instanceLine(
+  record: InstanceRecord,
+  liveState?: string,
+  price?: PriceHint,
+): string {
   const quiet = liveState !== undefined && record.state === "ready" && liveState === "running";
   const state = liveState && !quiet ? `${record.state}/${liveState}` : record.state;
+  const cost = accruedUsd(record, price);
+  const line = `${record.regionLabel} · ${record.ip} · ${formatAge(record.createdAt)} · ${state}`;
 
-  return `${record.regionLabel} · ${record.ip} · ${formatAge(record.createdAt)} · ${state}`;
+  return cost === null ? line : `${line} · ≈${formatCost(cost)}`;
 }
 
 /**
@@ -156,20 +248,57 @@ export function instanceLine(record: InstanceRecord, liveState?: string): string
  * @param records — tracked instances
  * @param live — live power states keyed by instance id; missing keys fall back
  *   to the KV state
+ * @param price — plan price used for records created before the price was
+ *   stamped
  * @returns plain-text message body
  */
-export function statusMessage(records: InstanceRecord[], live: Map<string, string>): string {
+export function statusMessage(
+  records: InstanceRecord[],
+  live: Map<string, string>,
+  price?: PriceHint,
+): string {
   if (records.length === 0) {
     return "no servers tracked. use /create to create one.";
   }
 
-  const lines = records.map((record) => instanceLine(record, live.get(record.id)));
+  const lines = records.map((record) => instanceLine(record, live.get(record.id), price));
+  const costs = records
+    .map((record) => accruedUsd(record, price))
+    .filter((cost): cost is number => cost !== null);
+  const total = costs.reduce((sum, cost) => sum + cost, 0);
+  const footer = ["/create — new server, /restart — reboot a server", "/destroy — remove"];
 
-  return [
-    "tracked servers:",
-    ...lines,
-    "",
-    "/create — new server, /restart — reboot a server",
-    "/destroy — remove",
-  ].join("\n");
+  if (costs.length > 0) {
+    footer.push(`total accrued ≈${formatCost(total)}`);
+  }
+
+  return ["tracked servers:", ...lines, "", ...footer].join("\n");
+}
+
+/**
+ * renders the destroy confirmation prompt
+ *
+ * @param record — instance about to be destroyed
+ * @param price — plan price used for records created before the price was
+ *   stamped
+ * @returns chat copy with the accrued cost when it is known
+ */
+export function destroyPrompt(record: InstanceRecord, price?: PriceHint): string {
+  const cost = accruedUsd(record, price);
+  const priceLine = cost === null ? "" : `\naccrued ≈${formatCost(cost)} so far.`;
+
+  return `⚠️ destroy ${record.regionLabel} · ${record.ip}?${priceLine}\nthis cannot be undone.`;
+}
+
+/**
+ * renders the destroyed notice with the instance lifetime cost
+ *
+ * @param record — instance that was destroyed
+ * @param cost — lifetime cost in us dollars, or `null` when no price is known
+ * @returns chat copy ending with a period
+ */
+export function destroyedMessage(record: InstanceRecord, cost: number | null): string {
+  const priceLine = cost === null ? "" : ` lifetime cost ≈${formatCost(cost)}.`;
+
+  return `🗑 destroyed ${record.regionLabel} · ${record.ip}.${priceLine}`;
 }

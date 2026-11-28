@@ -9,7 +9,7 @@ export interface Env {
   /** Telegram bot token issued by @BotFather. Secret */
   BOT_TOKEN: string;
 
-  /** linode api token with read/write access. Secret */
+  /** linode api token with read/write access. secret */
   LINODE_API_TOKEN: string;
 
   /** REALITY camouflage host. Its TLS handshake is what an unauthenticated peer sees */
@@ -85,11 +85,17 @@ export interface InstanceRecord {
   /** epoch ms timestamp of a requested reboot, cleared once confirmed */
   rebootedAt?: number;
 
+  /** hourly price in us dollars stamped at creation, used for cost reporting */
+  priceHourly?: number;
+
+  /** monthly price in us dollars stamped at creation, the billing cap */
+  priceMonthly?: number;
+
   /** failure reason when `state` is `failed` */
   error?: string;
 }
 
-/** A region button offered in the `/create` menu */
+/** a region button offered in the `/create` menu */
 export interface Region {
   /** linode region id, for example `jp-tyo-3` */
   id: string;

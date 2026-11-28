@@ -16,8 +16,12 @@ out, fresh credentials per server, no always-on process to babysit.
   and credentials stay, and the link keeps working after reboot. The bot
   confirms in chat when the server is back, with the time it took.
 - `/destroy [ip]`: destroy a tracked instance by ip without further prompts,
-  or pick one from a prompt (two-step confirmation there).
-- `/status`: tracked servers with age and live power state.
+  or pick one from a prompt (two-step confirmation there). both show the
+  lifetime cost.
+- `/status`: tracked servers with age, live power state and accrued cost, plus
+  a fleet total.
+- `/start`, `/help`: command list plus the hourly and monthly price of the
+  current plan.
 
 Commands are slash-only: the bot registers no text matchers, so plain chat text
 never reaches a handler.
@@ -123,7 +127,7 @@ Open the bot, then `/create`.
 | Var       | Meaning                                                                        |
 | --------- | ------------------------------------------------------------------------------ |
 | `REGIONS` | `id:label` pairs offered in the `/create` menu (`jp-tyo-3:Tokyo,jp-osa:Osaka`) |
-| `TYPE`    | linode plan id, default `g6-nanode-1` (~$5/mo)                                 |
+| `TYPE`    | linode plan id, default `g6-nanode-1` (≈$0.0075/h, ≈$5/mo)                     |
 | `IMAGE`   | linode image id, must support cloud-init, default `linode/debian13`            |
 | `SNI`     | REALITY camouflage destination, default `www.yahoo.com`                        |
 

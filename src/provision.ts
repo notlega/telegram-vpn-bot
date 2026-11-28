@@ -3,8 +3,10 @@ import { generateRealityKeyPair, generateShortId, generateUuid, randomHex } from
 import { saveInstance } from "./kv";
 import {
   createInstance,
+  getType,
   type LinodeImage,
   type LinodeInstance,
+  type LinodeType,
   listImages,
   ProviderError,
   pickImage,
@@ -16,6 +18,12 @@ const IMAGE_CACHE_KEY = "cache:images";
 
 /** image catalogue cache lifetime in seconds */
 const IMAGE_CACHE_TTL = 86_400;
+
+/** KV key caching the plan price */
+const PRICE_CACHE_KEY = "cache:types";
+
+/** plan price cache lifetime in seconds */
+const PRICE_CACHE_TTL = 86_400;
 
 /**
  * loads the linode image catalogue, preferring the kv cache
@@ -36,6 +44,32 @@ async function loadImages(env: Env): Promise<LinodeImage[]> {
   const images = await listImages(env.LINODE_API_TOKEN);
   await env.KV.put(IMAGE_CACHE_KEY, JSON.stringify(images), { expirationTtl: IMAGE_CACHE_TTL });
   return images;
+}
+
+/**
+ * loads the price of the configured plan, preferring the kv cache
+ *
+ * prices change rarely, so the api answer is cached for a day instead of being
+ * fetched on every status or create call
+ *
+ * @param env — worker bindings; `TYPE` selects the plan
+ * @returns hourly and monthly price, or `null` when linode did not answer
+ */
+export async function loadTypePrice(env: Env): Promise<LinodeType | null> {
+  const cached = await env.KV.get<LinodeType>(PRICE_CACHE_KEY, "json");
+
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const type = await getType(env.LINODE_API_TOKEN, env.TYPE);
+    await env.KV.put(PRICE_CACHE_KEY, JSON.stringify(type), { expirationTtl: PRICE_CACHE_TTL });
+    return type;
+  } catch (error) {
+    console.warn("plan price lookup failed", error);
+    return null;
+  }
 }
 
 /**
@@ -103,6 +137,7 @@ export async function provisionServer(
   const uuid = generateUuid();
   const shortId = generateShortId();
   const secret = randomHex(24);
+  const price = await loadTypePrice(env);
   const userData = buildUserData({
     uuid,
     privateKey: keys.privateKey,
@@ -144,6 +179,8 @@ export async function provisionServer(
     shortId,
     sni: env.SNI,
     createdAt: Date.now(),
+    priceHourly: price?.hourly,
+    priceMonthly: price?.monthly,
   };
 
   await saveInstance(env.KV, record);

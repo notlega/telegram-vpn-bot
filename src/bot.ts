@@ -2,23 +2,43 @@ import { type Api, Bot, type Context, InlineKeyboard } from "grammy";
 import type { Env, InstanceRecord, Region } from "./env";
 import { deleteInstanceRecord, getInstance, listInstanceRecords, saveInstance } from "./kv";
 import { destroyInstance, listInstances, ProviderError, rebootInstance } from "./linode";
-import { statusMessage } from "./messages";
-import { describeProvisioning, findRegion, parseRegions, provisionServer } from "./provision";
+import {
+  accruedUsd,
+  costNote,
+  costNoteFallback,
+  destroyedMessage,
+  destroyPrompt,
+  statusMessage,
+} from "./messages";
+import {
+  describeProvisioning,
+  findRegion,
+  loadTypePrice,
+  parseRegions,
+  provisionServer,
+} from "./provision";
 
 /**
  * builds the help text
  *
+ * @param priceLine — price sentence, or `undefined` when the plan price is unknown
  * @returns plain text shown by /start and /help
  */
-function welcomeText(): string {
-  return [
+function welcomeText(priceLine?: string): string {
+  const lines = [
     "telegram-vpn-bot",
     "",
     "/create — create a VLESS + REALITY server",
     "/restart — reboot a server",
     "/destroy — destroy a server",
     "/status — list tracked servers",
-  ].join("\n");
+  ];
+
+  if (priceLine) {
+    lines.push("", priceLine);
+  }
+
+  return lines.join("\n");
 }
 
 /**
@@ -82,6 +102,8 @@ async function startReboot(context: Context, env: Env, record: InstanceRecord): 
  */
 async function performDestroy(context: Context, env: Env, record: InstanceRecord): Promise<void> {
   const notify = (text: string) => context.editMessageText(text).catch(() => context.reply(text));
+  const price = await loadTypePrice(env);
+  const cost = accruedUsd(record, price ?? undefined);
 
   try {
     await destroyInstance(env.LINODE_API_TOKEN, Number(record.id)).catch((error: unknown) => {
@@ -92,7 +114,7 @@ async function performDestroy(context: Context, env: Env, record: InstanceRecord
       throw error;
     });
     await deleteInstanceRecord(env.KV, record);
-    await notify(`🗑 destroyed ${serverLabel(record)}.`).catch((error) =>
+    await notify(destroyedMessage(record, cost)).catch((error) =>
       console.warn("destroyed notice failed", error),
     );
   } catch (error) {
@@ -135,8 +157,8 @@ async function startProvision(
 }
 
 /**
- * builds the bot: command handlers, callback handlers and the error boundary.
- * Stateless — one instance is created per webhook request. access control is
+ * builds the bot: command handlers, callback handlers and the error boundary
+ * stateless — one instance is created per webhook request. access control is
  * telegram's job: restrict who can message the bot in the BotFather settings,
  * the bot itself never checks sender ids
  *
@@ -146,10 +168,20 @@ async function startProvision(
  */
 export function createBot(env: Env, publicUrl: string): Bot {
   const bot = new Bot(env.BOT_TOKEN);
-  const welcome = welcomeText();
 
-  bot.command("start", (context) => context.reply(welcome));
-  bot.command("help", (context) => context.reply(welcome));
+  bot.command("start", async (context) => {
+    const price = await loadTypePrice(env);
+    const priceLine = price ? costNote(price.hourly, price.monthly, price.id) : costNoteFallback();
+
+    await context.reply(welcomeText(priceLine));
+  });
+
+  bot.command("help", async (context) => {
+    const price = await loadTypePrice(env);
+    const priceLine = price ? costNote(price.hourly, price.monthly, price.id) : costNoteFallback();
+
+    await context.reply(welcomeText(priceLine));
+  });
 
   bot.command("create", async (context) => {
     const argument = context.match.trim();
@@ -281,12 +313,13 @@ export function createBot(env: Env, publicUrl: string): Bot {
     }
 
     await context.answerCallbackQuery();
+    const price = await loadTypePrice(env);
     const keyboard = new InlineKeyboard()
       .text("Yes, destroy", `confirm:${record.id}`)
       .text("Cancel", `cancel:${record.id}`);
 
     await context
-      .editMessageText(`⚠️ destroy ${serverLabel(record)}?\nthis cannot be undone.`, {
+      .editMessageText(destroyPrompt(record, price ?? undefined), {
         reply_markup: keyboard,
       })
       .catch((error) => console.warn("destroy confirmation render failed", error));
@@ -324,7 +357,8 @@ export function createBot(env: Env, publicUrl: string): Bot {
       console.warn("live instance fetch failed, showing cached state", error);
     }
 
-    await context.reply(statusMessage(records, live));
+    const price = await loadTypePrice(env);
+    await context.reply(statusMessage(records, live, price ?? undefined));
   });
 
   bot.catch(async (error) => {

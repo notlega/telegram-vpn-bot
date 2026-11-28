@@ -191,6 +191,41 @@ export async function rebootInstance(token: string, id: number): Promise<void> {
   });
 }
 
+/** one entry from the plan catalogue, trimmed to the price the bot reports */
+export interface LinodeType {
+  /** plan id, for example `g6-nanode-1` */
+  id: string;
+
+  /** hourly price in us dollars */
+  hourly: number;
+
+  /** monthly price in us dollars, the billing cap */
+  monthly: number;
+}
+
+/** raw shape of one entry from `GET /linode/types/{id}` */
+interface LinodeTypeResponse {
+  /** plan id */
+  id: string;
+
+  /** price object, in us dollars */
+  price: { hourly: number; monthly: number };
+}
+
+/**
+ * fetches one plan so the bot can report what servers cost
+ *
+ * @param token — linode api token
+ * @param typeId — plan id, for example `g6-nanode-1`
+ * @returns plan id and its hourly and monthly price
+ * @throws {ProviderError} when linode rejects the request
+ */
+export async function getType(token: string, typeId: string): Promise<LinodeType> {
+  const result = await request<LinodeTypeResponse>(token, `/linode/types/${typeId}`);
+
+  return { id: result.id, hourly: result.price.hourly, monthly: result.price.monthly };
+}
+
 /**
  * fetches the image catalogue so the caller can confirm cloud-init support
  *
