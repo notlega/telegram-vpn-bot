@@ -7,7 +7,7 @@ import { encodeGrayscalePng } from "./png";
  * @param text — payload to encode, usually a share link
  * @param scale — pixels per QR module. Defaults to 8
  * @param quietZone — blank modules added on every side; the QR spec requires
- *   at least 4. Defaults to 4
+ *   at least 4. defaults to 4
  * @returns the QR code as grayscale PNG bytes
  */
 export async function qrPng(text: string, scale = 8, quietZone = 4): Promise<Uint8Array> {

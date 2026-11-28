@@ -80,7 +80,7 @@ export async function publishReady(env: Env, record: InstanceRecord, note?: stri
  * handles the cloud-init completion callback `GET /ready?token=…&ip=…`
  *
  * resolves the record through the token index, stores the reported IP, flips
- * the state to `ready` and publishes the link. Saving in any state other than
+ * the state to `ready` and publishes the link. saving in any state other than
  * `provisioning` burns the token, so a repeated callback returns `unknown token`
  *
  * @param env — worker bindings
@@ -138,7 +138,7 @@ async function markFailed(env: Env, record: InstanceRecord, reason: string): Pro
  * reads the `pending` and `rebooting` indexes first, so a tick with nothing to
  * do costs two KV reads. Provisioning records are published once their instance
  * is running past the fallback window, failed when the instance disappeared and
- * timed out after 15 minutes. Rebooting records are confirmed once linode
+ * timed out after 15 minutes. rebooting records are confirmed once linode
  * reports them running again
  *
  * @param env — worker bindings
@@ -209,7 +209,7 @@ export async function reconcile(env: Env): Promise<void> {
  *
  * a reboot counts as done once linode reports `running` and at least
  * {@link REBOOT_GRACE_MS} has passed — the grace guards against the stale
- * `running` status read before the reboot actually starts. When nothing
+ * `running` status read before the reboot actually starts. when nothing
  * confirms within {@link REBOOT_TIMEOUT_MS}, the operator is told to check
  * `/status`
  *

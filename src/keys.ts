@@ -2,16 +2,16 @@
  * per-instance credential generation
  *
  * Xray speaks base64url (raw, unpadded) for REALITY x25519 keys and hex for
- * short ids. Everything is derived from WebCrypto so nothing has to be stored
+ * short ids. everything is derived from WebCrypto so nothing has to be stored
  * between requests
  */
 
-/** A REALITY key pair, both halves encoded the way Xray expects them */
+/** a REALITY key pair, both halves encoded the way Xray expects them */
 export interface RealityKeyPair {
-  /** 32 raw bytes, base64url encoded. Written to the server config */
+  /** 32 raw bytes, base64url encoded. written to the server config */
   privateKey: string;
 
-  /** 32 raw bytes, base64url encoded. Published in the share link as `pbk` */
+  /** 32 raw bytes, base64url encoded. published in the share link as `pbk` */
   publicKey: string;
 }
 
@@ -95,7 +95,7 @@ export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
  * generates a REALITY short id
  *
  * @param byteLength — number of random bytes; Xray accepts up to 8 bytes
- *   (16 hex characters). Defaults to 4
+ *   (16 hex characters). defaults to 4
  * @returns lowercase hex string, `byteLength * 2` characters long
  */
 export function generateShortId(byteLength = 4): string {

@@ -1,7 +1,7 @@
 /**
  * registers or removes the Telegram webhook
  *
- * Usage:
+ * usage:
  *   bun scripts/set-webhook.ts <workers-url>
  *   bun scripts/set-webhook.ts --delete
  *

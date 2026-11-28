@@ -1,9 +1,9 @@
 /**
  * pushes worker secrets from .env to Cloudflare
  *
- * Usage: bun scripts/secrets.ts
+ * usage: bun scripts/secrets.ts
  *
- * Uses the project-local wrangler from node_modules (installed by `bun install`)
+ * uses the project-local wrangler from node_modules (installed by `bun install`)
  */
 
 const SECRETS = ["BOT_TOKEN", "LINODE_API_TOKEN", "WEBHOOK_SECRET"] as const;

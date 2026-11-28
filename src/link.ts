@@ -36,7 +36,7 @@ export interface VlessParams {
  * security, `chrome` fingerprint and XTLS Vision flow
  *
  * @param params — server address and credentials
- * @returns a `vless://` URL. Treat it as a bearer credential
+ * @returns a `vless://` URL. treat it as a bearer credential
  * @example
  * buildVlessLink({ host: "203.0.113.10", uuid, publicKey, shortId, sni, label });
  * // vless://<uuid>@203.0.113.10:443?type=tcp&security=reality&…#VPN-Seoul

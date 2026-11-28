@@ -96,7 +96,7 @@ async function deflate(data: Uint8Array): Promise<Uint8Array> {
  * encodes 8-bit grayscale pixels as a PNG file
  *
  * @param pixels — row-major grayscale samples, one byte per pixel (0 black,
- *   255 white). Length must equal `width * height`
+ *   255 white). length must equal `width * height`
  * @param width — image width in pixels
  * @param height — image height in pixels
  * @returns the complete PNG file as bytes
